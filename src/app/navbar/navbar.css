@@ -1,0 +1,173 @@
+/* ================= NAVBAR ================= */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 34px;
+    z-index: 999;
+    background: #f8fafc;
+}
+
+/* Left Logo + Icon */
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo-icon {
+    font-size: 30px;
+    color: #2563eb;
+}
+
+.logo-text {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    color: #111;
+}
+
+/* Right side */
+.nav-right {
+    position: relative;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* ================= DROPDOWN ================= */
+.dropdown {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    width: 220px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+/* User info at top */
+.dropdown-user {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f3f4f6;
+}
+
+.user-info .user-name {
+    display: block;
+    font-weight: 600;
+    color: #111;
+    font-size: 14px;
+}
+
+.user-info .user-email {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Menu Items */
+.dropdown a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #111;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.dropdown a:hover {
+    background: #f1f5f9;
+}
+
+/* Icon in menu */
+.menu-icon {
+    font-size: 18px;
+    color: #2563eb;
+    padding: 6px;
+    border-radius: 6px;
+    background: rgba(37, 99, 235, 0.1);
+    /* lighter bg */
+}
+
+/* ================= BUTTONS ================= */
+.btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn.outline {
+    background: transparent;
+    border: 1px solid #d1d5db;
+    color: #111;
+}
+
+.btn.outline:hover {
+    background: #f1f5f9;
+}
+
+.btn.primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.btn.primary:hover {
+    background: #1d4ed8;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+/* User Box */
+.user-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.user-box:hover {
+    background: #f8fafc;
+}
+
+.avatar {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #e5e7eb;
+}
+
+.username {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.arrow {
+    font-size: 17px;
+    color: #6b7280;
+    transition: transform 0.2s ease;
+}

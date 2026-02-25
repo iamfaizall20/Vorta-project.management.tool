@@ -1,1 +1,47 @@
-<p>navbar works!</p>
+<nav class="navbar">
+    <!-- Left: Logo + Icon -->
+    <div class="nav-left">
+        <i class="material-icons logo-icon">task_alt</i>
+        <span class="logo-text">TASKSY</span>
+    </div>
+
+    <!-- Right: User Section -->
+    <div class="nav-right">
+
+        <!-- GUEST -->
+        <ng-container *ngIf="!isLoggedIn">
+            <a routerLink="/login" class="btn outline">Login</a>
+            <a routerLink="/signup" class="btn primary">Sign Up</a>
+        </ng-container>
+
+        <!-- LOGGED IN -->
+        <ng-container *ngIf="isLoggedIn">
+            <div class="user-box" (click)="toggleDropdown()">
+                <img src="https://via.placeholder.com/25" class="avatar" />
+                <span class="username">John Doe</span>
+                <span class="arrow">▾</span>
+            </div>
+
+            <div class="dropdown" *ngIf="openDropdown">
+                <!-- User Info -->
+                <div class="dropdown-user">
+                    <div class="user-info">
+                        <span class="user-name">John Doe</span>
+                        <span class="user-email">john@example.com</span>
+                    </div>
+                </div>
+
+                <!-- Menu Items -->
+                <a routerLink="/editprofile">
+                    <i class="material-icons menu-icon">edit</i>
+                    Edit Profile
+                </a>
+                <a (click)="logout()">
+                    <i class="material-icons menu-icon">logout</i>
+                    Logout
+                </a>
+            </div>
+        </ng-container>
+
+    </div>
+</nav>

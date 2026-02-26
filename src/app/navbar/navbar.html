@@ -1,47 +1,87 @@
-<nav class="navbar">
-    <!-- Left: Logo + Icon -->
-    <div class="nav-left">
-        <i class="material-icons logo-icon">task_alt</i>
-        <span class="logo-text">TASKSY</span>
+<nav class="navbar" [class.scrolled]="isScrolled" [class.menu-open]="menuOpen">
+
+    <!-- Logo -->
+    <a class="nav-brand" routerLink="/">
+        <span class="material-icons logo-icon">task_alt</span>
+        <span class="logo-text">TaskFlow</span>
+    </a>
+
+    <!-- Desktop Nav Links -->
+    <ul class="nav-links">
+        <li><a routerLink="/features" routerLinkActive="active">Features</a></li>
+        <li><a routerLink="/pricing" routerLinkActive="active">Pricing</a></li>
+        <li>
+            <a class="nav-link-dropdown" (click)="toggleDropdown()">
+                Resources
+                <span class="material-icons dropdown-arrow" [class.open]="dropdownOpen">expand_more</span>
+            </a>
+            <div class="dropdown-menu" [class.visible]="dropdownOpen">
+                <a routerLink="/docs" class="dropdown-item" (click)="dropdownOpen = false">
+                    <span class="material-icons">menu_book</span>
+                    <span>
+                        <strong>Documentation</strong>
+                        <small>Guides & API reference</small>
+                    </span>
+                </a>
+                <a routerLink="/blog" class="dropdown-item" (click)="dropdownOpen = false">
+                    <span class="material-icons">rss_feed</span>
+                    <span>
+                        <strong>Blog</strong>
+                        <small>Tips, updates & stories</small>
+                    </span>
+                </a>
+                <a routerLink="/changelog" class="dropdown-item" (click)="dropdownOpen = false">
+                    <span class="material-icons">update</span>
+                    <span>
+                        <strong>Changelog</strong>
+                        <small>What's new in TaskFlow</small>
+                    </span>
+                </a>
+                <a routerLink="/status" class="dropdown-item" (click)="dropdownOpen = false">
+                    <span class="material-icons">monitor_heart</span>
+                    <span>
+                        <strong>Status</strong>
+                        <small>System uptime & incidents</small>
+                    </span>
+                </a>
+            </div>
+        </li>
+        <li><a routerLink="/pricing" routerLinkActive="active">Roadmap</a></li>
+    </ul>
+
+    <!-- Desktop CTA -->
+    <div class="nav-cta">
+        <a routerLink="/login" class="btn-nav-ghost">Log in</a>
+        <a routerLink="/signup" class="btn-nav-primary">
+            Get started
+            <span class="material-icons btn-arrow">arrow_forward</span>
+        </a>
     </div>
 
-    <!-- Right: User Section -->
-    <div class="nav-right">
+    <!-- Mobile Hamburger -->
+    <button class="hamburger" (click)="toggleMenu()" [class.open]="menuOpen" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
 
-        <!-- GUEST -->
-        <ng-container *ngIf="!isLoggedIn">
-            <a routerLink="/login" class="btn outline">Login</a>
-            <a routerLink="/signup" class="btn primary">Sign Up</a>
-        </ng-container>
-
-        <!-- LOGGED IN -->
-        <ng-container *ngIf="isLoggedIn">
-            <div class="user-box" (click)="toggleDropdown()">
-                <img src="https://via.placeholder.com/25" class="avatar" />
-                <span class="username">John Doe</span>
-                <span class="arrow">▾</span>
-            </div>
-
-            <div class="dropdown" *ngIf="openDropdown">
-                <!-- User Info -->
-                <div class="dropdown-user">
-                    <div class="user-info">
-                        <span class="user-name">John Doe</span>
-                        <span class="user-email">john@example.com</span>
-                    </div>
-                </div>
-
-                <!-- Menu Items -->
-                <a routerLink="/editprofile">
-                    <i class="material-icons menu-icon">edit</i>
-                    Edit Profile
-                </a>
-                <a (click)="logout()">
-                    <i class="material-icons menu-icon">logout</i>
-                    Logout
-                </a>
-            </div>
-        </ng-container>
-
-    </div>
 </nav>
+
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu" [class.open]="menuOpen">
+    <ul class="mobile-links">
+        <li><a routerLink="/features" routerLinkActive="active" (click)="closeMenu()">Features</a></li>
+        <li><a routerLink="/pricing" routerLinkActive="active" (click)="closeMenu()">Pricing</a></li>
+        <li><a routerLink="/docs" routerLinkActive="active" (click)="closeMenu()">Documentation</a></li>
+        <li><a routerLink="/blog" routerLinkActive="active" (click)="closeMenu()">Blog</a></li>
+        <li><a routerLink="/changelog" routerLinkActive="active" (click)="closeMenu()">Changelog</a></li>
+        <li><a routerLink="/roadmap" routerLinkActive="active" (click)="closeMenu()">Roadmap</a></li>
+    </ul>
+    <div class="mobile-cta">
+        <a routerLink="/login" class="btn-nav-ghost full" (click)="closeMenu()">Log in</a>
+        <a routerLink="/signup" class="btn-nav-primary full" (click)="closeMenu()">Get started free</a>
+    </div>
+</div>
+
+<!-- Backdrop -->
+<div class="menu-backdrop" [class.visible]="menuOpen" (click)="closeMenu()"></div>

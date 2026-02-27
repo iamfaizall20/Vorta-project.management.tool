@@ -1,1 +1,117 @@
-<p>sidebar works!</p>
+<aside class="sidebar" [class.collapsed]="isCollapsed">
+
+    <!-- ── Top: Brand ───────────────────────────────────────────── -->
+    <div class="sidebar__brand">
+        <div class="brand-mark">
+            <span class="material-icons brand-mark__icon">hub</span>
+        </div>
+        <span class="brand-mark__name" *ngIf="!isCollapsed">Vorta</span>
+        <button class="collapse-btn" (click)="toggleCollapse()" [title]="isCollapsed ? 'Expand' : 'Collapse'">
+            <span class="material-icons">{{ isCollapsed ? 'chevron_right' : 'chevron_left' }}</span>
+        </button>
+    </div>
+
+    <!-- ── New Project Button ───────────────────────────────────── -->
+    <div class="sidebar__new">
+        <button class="new-btn" (click)="onNewProject()" [class.new-btn--icon]="isCollapsed" title="New Project">
+            <span class="material-icons">add</span>
+            <span *ngIf="!isCollapsed">New Project</span>
+        </button>
+    </div>
+
+    <!-- ── Navigation ──────────────────────────────────────────── -->
+    <nav class="sidebar__nav">
+
+        <!-- Main -->
+        <div class="nav-section">
+            <span class="nav-section__label" *ngIf="!isCollapsed">Main</span>
+            <ul class="nav-list">
+                <li *ngFor="let item of mainNav">
+                    <a class="nav-item" [routerLink]="item.route" routerLinkActive="nav-item--active"
+                        [title]="item.label">
+                        <div class="nav-item__icon-wrap">
+                            <span class="material-icons nav-item__icon">{{ item.icon }}</span>
+                            <span class="nav-item__badge" *ngIf="item.badge && !isCollapsed">{{ item.badge }}</span>
+                            <span class="nav-item__dot" *ngIf="item.badge && isCollapsed"></span>
+                        </div>
+                        <span class="nav-item__label" *ngIf="!isCollapsed">{{ item.label }}</span>
+                        <span class="nav-item__badge nav-item__badge--inline" *ngIf="item.badge && !isCollapsed">{{
+                            item.badge }}</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Projects -->
+        <div class="nav-section">
+            <div class="nav-section__header" *ngIf="!isCollapsed" (click)="projectsExpanded = !projectsExpanded">
+                <span class="nav-section__label">Projects</span>
+                <span class="material-icons nav-section__arrow" [class.rotated]="!projectsExpanded">expand_more</span>
+            </div>
+            <span class="nav-section__label nav-section__label--icon" *ngIf="isCollapsed" title="Projects">
+                <span class="material-icons" style="font-size:14px">folder</span>
+            </span>
+            <ul class="nav-list" *ngIf="projectsExpanded || isCollapsed">
+                <li *ngFor="let p of recentProjects">
+                    <a class="nav-item nav-item--project" [routerLink]="['/app/projects', p.id]"
+                        routerLinkActive="nav-item--active" [title]="p.name">
+                        <span class="project-dot" [style.background]="p.color"></span>
+                        <span class="nav-item__label" *ngIf="!isCollapsed">{{ p.name }}</span>
+                        <span class="project-status-dot" [class]="'status--' + p.status" *ngIf="!isCollapsed"></span>
+                    </a>
+                </li>
+                <li *ngIf="!isCollapsed">
+                    <a class="nav-item nav-item--all" routerLink="/app/projects" title="All Projects">
+                        <span class="material-icons" style="font-size:15px; color: var(--text-faint)">more_horiz</span>
+                        <span class="nav-item__label" style="color: var(--text-faint); font-size: 12.5px">All
+                            projects</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Recents -->
+        <div class="nav-section" *ngIf="!isCollapsed">
+            <div class="nav-section__header" (click)="recentsExpanded = !recentsExpanded">
+                <span class="nav-section__label">Recents</span>
+                <span class="material-icons nav-section__arrow" [class.rotated]="!recentsExpanded">expand_more</span>
+            </div>
+            <ul class="nav-list" *ngIf="recentsExpanded">
+                <li *ngFor="let r of recentItems">
+                    <a class="nav-item nav-item--recent" [routerLink]="r.route" [title]="r.label">
+                        <span class="material-icons recent-icon">{{ r.icon }}</span>
+                        <span class="nav-item__label">{{ r.label }}</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+    </nav>
+
+    <!-- ── Spacer ───────────────────────────────────────────────── -->
+    <div class="sidebar__spacer"></div>
+
+    <!-- ── Bottom: Settings + Profile ──────────────────────────── -->
+    <div class="sidebar__bottom">
+
+        <a class="nav-item" routerLink="/app/settings" routerLinkActive="nav-item--active" title="Settings">
+            <span class="material-icons nav-item__icon">settings</span>
+            <span class="nav-item__label" *ngIf="!isCollapsed">Settings</span>
+        </a>
+
+        <div class="sidebar__profile" [class.sidebar__profile--collapsed]="isCollapsed" (click)="onProfileClick()"
+            title="My Profile">
+            <div class="profile-avatar">
+                <span>{{ currentUser.initials }}</span>
+                <div class="profile-avatar__ring"></div>
+            </div>
+            <div class="profile-info" *ngIf="!isCollapsed">
+                <span class="profile-info__name">{{ currentUser.name }}</span>
+                <span class="profile-info__role">{{ currentUser.role }}</span>
+            </div>
+            <span class="material-icons profile-chevron" *ngIf="!isCollapsed">unfold_more</span>
+        </div>
+
+    </div>
+
+</aside>

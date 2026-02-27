@@ -1,2 +1,290 @@
-<app-navbar></app-navbar>
-<p>dashboard works!</p>
+<div class="dashboard">
+
+    <!-- ── Top Bar ─────────────────────────────────────────────── -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb" aria-label="breadcrumb">
+          <a class="breadcrumb__item" routerLink="/app">Vorta</a>
+          <span class="material-icons breadcrumb__sep">chevron_right</span>
+          <span class="breadcrumb__item breadcrumb__item--active">Dashboard</span>
+        </nav>
+      </div>
+  
+      <div class="topbar__right">
+        <!-- Search -->
+        <div class="topbar-search" [class.topbar-search--open]="searchOpen">
+          <span class="material-icons topbar-search__icon">search</span>
+          <input
+            type="text"
+            class="topbar-search__input"
+            placeholder="Search projects, tasks, members…"
+            [(ngModel)]="searchQuery"
+            (focus)="searchOpen = true"
+            (blur)="searchOpen = false"
+          />
+          <kbd class="topbar-search__kbd" *ngIf="!searchOpen">⌘K</kbd>
+        </div>
+  
+        <!-- Action buttons -->
+        <div class="topbar__actions">
+          <button class="icon-btn" title="Notifications" (click)="toggleNotifications()">
+            <span class="material-icons">notifications</span>
+            <span class="icon-btn__badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+          </button>
+  
+          <button class="icon-btn" title="Settings" routerLink="/app/settings">
+            <span class="material-icons">settings</span>
+          </button>
+  
+          <button class="icon-btn" title="Help">
+            <span class="material-icons">help_outline</span>
+          </button>
+  
+          <div class="topbar-avatar" title="{{ currentUser.name }}" routerLink="/app/profile">
+            <span>{{ currentUser.initials }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+  
+    <!-- ── Main Scroll Area ────────────────────────────────────── -->
+    <main class="dashboard__main">
+  
+      <!-- ── Welcome Row ──────────────────────────────────────── -->
+      <div class="welcome-row">
+        <div class="welcome-row__text">
+          <h1 class="welcome-row__title">Good {{ timeOfDay }}, <em>{{ currentUser.firstName }}</em> ✦</h1>
+          <p class="welcome-row__sub">You have <strong>{{ myTasksToday }}</strong> tasks due today across {{ activeProjectCount }} active projects.</p>
+        </div>
+        <button class="btn-primary" (click)="onNewProject()">
+          <span class="material-icons">add</span>
+          New Project
+        </button>
+      </div>
+  
+      <!-- ── Stats Row ────────────────────────────────────────── -->
+      <div class="stats-row">
+        <div class="stat-card" *ngFor="let s of stats; let i = index" [style.animation-delay]="(i * 0.07) + 's'">
+          <div class="stat-card__icon-wrap" [style.background]="s.iconBg">
+            <span class="material-icons stat-card__icon" [style.color]="s.iconColor">{{ s.icon }}</span>
+          </div>
+          <div class="stat-card__body">
+            <span class="stat-card__value">{{ s.value }}</span>
+            <span class="stat-card__label">{{ s.label }}</span>
+          </div>
+          <div class="stat-card__trend" [class.trend--up]="s.trendUp" [class.trend--down]="!s.trendUp">
+            <span class="material-icons">{{ s.trendUp ? 'trending_up' : 'trending_down' }}</span>
+            <span>{{ s.trend }}</span>
+          </div>
+        </div>
+      </div>
+  
+      <!-- ── Content Grid ──────────────────────────────────────── -->
+      <div class="content-grid">
+  
+        <!-- LEFT: Kanban ──────────────────────────────────────── -->
+        <section class="kanban-section">
+  
+          <!-- Kanban Header -->
+          <div class="section-header">
+            <div class="section-header__left">
+              <h2 class="section-title">Projects</h2>
+              <span class="section-count">{{ totalProjects }}</span>
+            </div>
+            <div class="section-header__right">
+              <!-- Filter pills -->
+              <div class="filter-pills">
+                <button class="filter-pill"
+                        *ngFor="let f of filters"
+                        [class.filter-pill--active]="activeFilter === f.value"
+                        (click)="setFilter(f.value)">
+                  {{ f.label }}
+                </button>
+              </div>
+              <!-- View toggle -->
+              <div class="view-toggle">
+                <button class="view-btn" [class.view-btn--active]="viewMode === 'kanban'" (click)="viewMode = 'kanban'" title="Kanban">
+                  <span class="material-icons">view_kanban</span>
+                </button>
+                <button class="view-btn" [class.view-btn--active]="viewMode === 'list'" (click)="viewMode = 'list'" title="List">
+                  <span class="material-icons">view_list</span>
+                </button>
+              </div>
+            </div>
+          </div>
+  
+          <!-- Search -->
+          <div class="project-search">
+            <span class="material-icons project-search__icon">search</span>
+            <input
+              type="text"
+              class="project-search__input"
+              placeholder="Search projects…"
+              [(ngModel)]="projectQuery"
+            />
+            <span class="material-icons project-search__clear"
+                  *ngIf="projectQuery"
+                  (click)="projectQuery = ''">close</span>
+          </div>
+  
+          <!-- ── KANBAN VIEW ──────────────────────────────────── -->
+          <div class="kanban-board" *ngIf="viewMode === 'kanban'">
+            <div class="kanban-col" *ngFor="let col of kanbanColumns">
+              <div class="kanban-col__head">
+                <div class="kanban-col__title-wrap">
+                  <span class="kanban-col__dot" [style.background]="col.color"></span>
+                  <span class="kanban-col__title">{{ col.label }}</span>
+                  <span class="kanban-col__count">{{ getFilteredProjects(col.status).length }}</span>
+                </div>
+                <button class="kanban-col__add" *ngIf="col.status === 'new'" (click)="onNewProject()" title="Add project">
+                  <span class="material-icons">add</span>
+                </button>
+              </div>
+  
+              <!-- Project Cards -->
+              <div class="kanban-cards">
+                <div class="project-card"
+                     *ngFor="let p of getFilteredProjects(col.status)"
+                     [style.--card-accent]="p.color"
+                     (click)="onOpenProject(p.id)">
+  
+                  <!-- Card accent stripe -->
+                  <div class="project-card__stripe"></div>
+  
+                  <div class="project-card__body">
+                    <!-- Top row -->
+                    <div class="project-card__top">
+                      <span class="project-card__name">{{ p.name }}</span>
+                      <button class="project-card__menu" (click)="$event.stopPropagation()">
+                        <span class="material-icons">more_horiz</span>
+                      </button>
+                    </div>
+  
+                    <!-- Description -->
+                    <p class="project-card__desc">{{ p.description }}</p>
+  
+                    <!-- Tasks mini progress -->
+                    <div class="project-card__tasks-row">
+                      <span class="material-icons project-card__task-icon">check_box</span>
+                      <span class="project-card__task-count">{{ p.tasksCompleted }}/{{ p.tasksTotal }} tasks</span>
+                      <span class="project-card__pct">{{ getProgress(p) }}%</span>
+                    </div>
+  
+                    <!-- Progress bar -->
+                    <div class="project-card__progress-bar">
+                      <div class="project-card__progress-fill"
+                           [style.width]="getProgress(p) + '%'"
+                           [style.background]="p.color"></div>
+                    </div>
+  
+                    <!-- Footer row -->
+                    <div class="project-card__footer">
+                      <!-- Member avatars -->
+                      <div class="member-stack">
+                        <div class="member-avatar"
+                             *ngFor="let m of p.members.slice(0,4)"
+                             [style.background]="m.color"
+                             [title]="m.name">
+                          {{ m.initials }}
+                        </div>
+                        <div class="member-avatar member-avatar--more"
+                             *ngIf="p.members.length > 4">
+                          +{{ p.members.length - 4 }}
+                        </div>
+                      </div>
+  
+                      <!-- Due date -->
+                      <div class="project-card__due" [class.project-card__due--overdue]="isOverdue(p.dueDate)">
+                        <span class="material-icons">schedule</span>
+                        <span>{{ formatDate(p.dueDate) }}</span>
+                      </div>
+                    </div>
+                  </div>
+  
+                </div>
+  
+                <!-- Empty column state -->
+                <div class="kanban-empty" *ngIf="getFilteredProjects(col.status).length === 0">
+                  <span class="material-icons kanban-empty__icon">inbox</span>
+                  <span>No {{ col.label.toLowerCase() }} projects</span>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <!-- ── LIST VIEW ────────────────────────────────────── -->
+          <div class="list-view" *ngIf="viewMode === 'list'">
+            <div class="list-row" *ngFor="let p of filteredProjects" (click)="onOpenProject(p.id)">
+              <span class="list-dot" [style.background]="p.color"></span>
+              <span class="list-name">{{ p.name }}</span>
+              <div class="list-members">
+                <div class="member-avatar member-avatar--sm"
+                     *ngFor="let m of p.members.slice(0,3)"
+                     [style.background]="m.color">{{ m.initials }}</div>
+              </div>
+              <div class="list-progress-bar">
+                <div class="list-progress-fill" [style.width]="getProgress(p) + '%'" [style.background]="p.color"></div>
+              </div>
+              <span class="list-pct">{{ getProgress(p) }}%</span>
+              <span class="list-status-badge" [class]="'badge--' + p.status">{{ p.status }}</span>
+              <span class="list-due" [class.overdue]="isOverdue(p.dueDate)">{{ formatDate(p.dueDate) }}</span>
+            </div>
+          </div>
+  
+        </section>
+  
+        <!-- RIGHT: Activity + My Tasks ─────────────────────────── -->
+        <aside class="side-panels">
+  
+          <!-- My Tasks Today -->
+          <div class="panel">
+            <div class="panel__head">
+              <h3 class="panel__title">My Tasks Today</h3>
+              <span class="panel__count">{{ myTasks.length }}</span>
+            </div>
+            <div class="panel__body">
+              <div class="task-row" *ngFor="let t of myTasks" [class.task-row--done]="t.done" (click)="toggleTask(t)">
+                <div class="task-row__check" [class.task-row__check--done]="t.done">
+                  <span class="material-icons" *ngIf="t.done">check</span>
+                </div>
+                <div class="task-row__info">
+                  <span class="task-row__name">{{ t.name }}</span>
+                  <span class="task-row__project">{{ t.project }}</span>
+                </div>
+                <span class="task-row__priority" [class]="'priority--' + t.priority">{{ t.priority }}</span>
+              </div>
+              <div class="panel__empty" *ngIf="myTasks.length === 0">
+                <span class="material-icons">check_circle</span>
+                <span>All caught up!</span>
+              </div>
+            </div>
+            <a class="panel__footer-link" routerLink="/app/tasks">View all tasks →</a>
+          </div>
+  
+          <!-- Activity Feed -->
+          <div class="panel">
+            <div class="panel__head">
+              <h3 class="panel__title">Activity</h3>
+              <button class="panel__head-btn">See all</button>
+            </div>
+            <div class="panel__body">
+              <div class="activity-row" *ngFor="let a of activities">
+                <div class="activity-avatar" [style.background]="a.color">{{ a.initials }}</div>
+                <div class="activity-body">
+                  <p class="activity-body__text">
+                    <strong>{{ a.actor }}</strong> {{ a.action }}
+                    <span class="activity-body__target">{{ a.target }}</span>
+                  </p>
+                  <span class="activity-body__time">{{ a.time }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+        </aside>
+  
+      </div>
+    </main>
+  
+  </div>

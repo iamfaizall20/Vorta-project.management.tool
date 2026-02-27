@@ -1,0 +1,19 @@
+:host {
+    display: block;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .app-shell {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background: #FAFAF8;
+  }
+  
+  .app-shell__content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }

@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Footer } from '../footer/footer';
 import { Navbar } from '../navbar/navbar';
+import { Footer } from '../footer/footer';
 
 interface Feature {
   icon: string;
@@ -17,66 +17,65 @@ interface Stat {
 }
 
 @Component({
-  selector: 'app-welcomepage',
+  selector: 'app-welcome',
   standalone: true,
-  imports: [CommonModule, Footer, Navbar],
+  imports: [CommonModule, Navbar, Footer],
   templateUrl: './welcomepage.html',
-  styleUrl: './welcomepage.css',
+  styleUrls: ['./welcomepage.css'],
 })
-export class Welcomepage {
-
+export class Welcomepage implements OnInit {
   showAnnouncement = true;
 
   features: Feature[] = [
     {
-      icon: 'bolt',
-      title: 'Lightning Fast',
+      icon: 'groups',
+      title: 'Team Management',
       description:
-        'Built on a zero-bloat architecture. Every action resolves in under 50ms — no spinners, no waiting.',
-      tag: '< 50ms response',
+        'Build your team from registered members, assign roles, and keep everyone accountable under one roof.',
+      tag: 'Manager controlled',
     },
     {
-      icon: 'feather',
-      title: 'Featherweight',
+      icon: 'account_tree',
+      title: 'Project Pipelines',
       description:
-        'Under 30KB total bundle. TaskFlow loads instantly even on the slowest connections.',
-      tag: '< 30KB bundle',
+        'Create projects, define scope, set deadlines, and track them from New → Active → Completed in real time.',
+      tag: 'Full lifecycle',
     },
     {
-      icon: 'devices',
-      title: 'Syncs Everywhere',
+      icon: 'task_alt',
+      title: 'Task Assignment',
       description:
-        'Real-time sync across all your devices — desktop, tablet, or phone. Always in perfect sync.',
-      tag: 'Real-time sync',
+        'Managers assign tasks to specific members. Members update status — progress calculates automatically.',
+      tag: 'Auto progress %',
     },
     {
-      icon: 'lock',
-      title: 'Privacy First',
+      icon: 'insights',
+      title: 'Live Progress Tracking',
       description:
-        'End-to-end encryption on all your tasks. Your data belongs to you — never sold, never shared.',
-      tag: 'E2E encrypted',
+        'Every check-mark a team member makes instantly updates the project progress bar. No manual reporting.',
+      tag: 'Real-time updates',
     },
     {
-      icon: 'palette',
-      title: 'Fully Customizable',
+      icon: 'tune',
+      title: 'Role-Based Access',
       description:
-        'Themes, labels, priorities, due dates — shape TaskFlow to match exactly how your brain works.',
-      tag: 'Your way',
+        'Managers see everything and control it. Members see their assigned work and update their own tasks.',
+      tag: 'Manager & Member roles',
     },
     {
-      icon: 'group',
-      title: 'Team Ready',
+      icon: 'dark_mode',
+      title: 'Built for Comfort',
       description:
-        'Invite your team, assign tasks, track progress together — collaboration without the chaos.',
-      tag: 'Up to 10 members free',
+        'Dark mode, light mode, accent colors and a clean interface designed to keep your team in flow.',
+      tag: 'Fully customizable',
     },
   ];
 
   stats: Stat[] = [
-    { value: '50K+', label: 'Active Users' },
-    { value: '2M+', label: 'Tasks Completed' },
+    { value: '50K+', label: 'Projects Managed' },
+    { value: '200K+', label: 'Tasks Completed' },
     { value: '99.9%', label: 'Uptime' },
-    { value: '< 50ms', label: 'Avg. Response' },
+    { value: '10K+', label: 'Active Teams' },
   ];
 
   constructor(private router: Router) { }
@@ -88,6 +87,6 @@ export class Welcomepage {
   }
 
   onTryDemo(): void {
-    this.router.navigate(['/demo']);
+    this.router.navigate(['/login']);
   }
 }

@@ -1,1 +1,180 @@
-<p>signup works!</p>
+<div class="auth-shell">
+
+    <!-- ── Left Panel ──────────────────────────────────────────── -->
+    <div class="auth-left">
+        <div class="auth-left__inner">
+            <div class="brand">
+                <!-- <span class="material-icons brand__icon">task_alt</span> -->
+                <span class="brand__name">Vorta</span>
+            </div>
+
+            <div class="auth-left__body">
+                <h1 class="auth-left__title">Manage work<br /><span class="accent">smarter.</span></h1>
+                <p class="auth-left__sub">
+                    Assign tasks, track progress, and ship projects — all in one place built for focused teams.
+                </p>
+
+                <ul class="feature-list">
+                    <li *ngFor="let f of features">
+                        <span class="material-icons feature-list__icon">{{ f.icon }}</span>
+                        <span>{{ f.text }}</span>
+                    </li>
+                </ul>
+            </div>
+
+            <p class="auth-left__footer">
+                © {{ year }} Vorta &nbsp;·&nbsp;
+                <a href="https://github.com/imafaizall20" target="_blank" rel="noopener">&#64;faizal hassan</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- ── Right Panel ─────────────────────────────────────────── -->
+    <div class="auth-right">
+        <div class="auth-card">
+
+            <div class="auth-card__head">
+                <h2 class="auth-card__title">Create your account</h2>
+                <p class="auth-card__sub">Free forever. No credit card required.</p>
+            </div>
+
+            <!-- Form -->
+            <form #signupForm="ngForm" (ngSubmit)="onSubmit(signupForm)" novalidate class="auth-form">
+
+                <!-- Username -->
+                <div class="field" [class.field--error]="username.invalid && username.touched"
+                    [class.field--valid]="username.valid && username.touched">
+                    <label class="field__label" for="username">Username</label>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon-left">person</span>
+                        <input id="username" name="username" type="text" class="field__input" placeholder="faizalhassan"
+                            ngModel #username="ngModel" required minlength="3" pattern="^[a-zA-Z0-9_]+$" />
+                        <span class="field__status-icon material-icons" *ngIf="username.touched">
+                            {{ username.valid ? 'check_circle' : 'cancel' }}
+                        </span>
+                    </div>
+                    <span class="field__msg" *ngIf="username.touched && username.errors?.['required']">Username is
+                        required.</span>
+                    <span class="field__msg" *ngIf="username.touched && username.errors?.['minlength']">At least 3
+                        characters.</span>
+                    <span class="field__msg" *ngIf="username.touched && username.errors?.['pattern']">Letters, numbers
+                        and underscores only.</span>
+                </div>
+
+                <!-- Email -->
+                <div class="field" [class.field--error]="email.invalid && email.touched"
+                    [class.field--valid]="email.valid && email.touched">
+                    <label class="field__label" for="email">Email address</label>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon-left">mail</span>
+                        <input id="email" name="email" type="email" class="field__input" placeholder="you@example.com"
+                            ngModel #email="ngModel" required email />
+                        <span class="field__status-icon material-icons" *ngIf="email.touched">
+                            {{ email.valid ? 'check_circle' : 'cancel' }}
+                        </span>
+                    </div>
+                    <span class="field__msg" *ngIf="email.touched && email.errors?.['required']">Email is
+                        required.</span>
+                    <span class="field__msg" *ngIf="email.touched && email.errors?.['email']">Enter a valid email
+                        address.</span>
+                </div>
+
+                <!-- Password -->
+                <div class="field" [class.field--error]="password.invalid && password.touched"
+                    [class.field--valid]="password.valid && password.touched">
+                    <label class="field__label" for="password">Password</label>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon-left">lock</span>
+                        <input id="password" name="password" [type]="showPassword ? 'text' : 'password'"
+                            class="field__input" placeholder="Min. 8 characters" [(ngModel)]="passwordValue"
+                            #password="ngModel" required minlength="8" [pattern]="passwordPattern"
+                            (input)="onPasswordInput()" />
+                        <button type="button" class="field__toggle" (click)="showPassword = !showPassword"
+                            tabindex="-1">
+                            <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Strength bar -->
+                    <div class="strength" *ngIf="passwordValue">
+                        <div class="strength__bar">
+                            <div class="strength__fill" [style.width]="strengthPercent + '%'"
+                                [class]="'strength__fill--' + strengthLabel.toLowerCase()"></div>
+                        </div>
+                        <span class="strength__label" [class]="'strength__label--' + strengthLabel.toLowerCase()">
+                            {{ strengthLabel }}
+                        </span>
+                    </div>
+
+                    <!-- Rules checklist -->
+                    <ul class="rules" *ngIf="password.touched || passwordValue">
+                        <li [class.rules__item--ok]=" ruleLength"><span class="material-icons">{{ ruleLength ?
+                                'check_circle' : 'radio_button_unchecked' }}</span> At least 8 characters</li>
+                        <li [class.rules__item--ok]=" ruleUpper"><span class="material-icons">{{ ruleUpper ?
+                                'check_circle' : 'radio_button_unchecked' }}</span> One uppercase letter</li>
+                        <li [class.rules__item--ok]="ruleNumber"><span class="material-icons">{{ ruleNumber ?
+                                'check_circle' : 'radio_button_unchecked' }}</span> One number</li>
+                        <li [class.rules__item--ok]=" ruleSpecial"><span class="material-icons">{{ ruleSpecial ?
+                                'check_circle' : 'radio_button_unchecked' }}</span> One special character (!&#64;#$%)
+                        </li>
+                    </ul>
+
+                    <span class="field__msg" *ngIf="password.touched && password.errors?.['required']">Password is
+                        required.</span>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="field"
+                    [class.field--error]="confirmPassword.touched && (confirmPassword.invalid || !passwordsMatch)"
+                    [class.field--valid]="confirmPassword.touched && confirmPassword.valid && passwordsMatch && confirmValue">
+                    <label class="field__label" for="confirmPassword">Confirm password</label>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon-left">lock_reset</span>
+                        <input id="confirmPassword" name="confirmPassword" [type]="showConfirm ? 'text' : 'password'"
+                            class="field__input" placeholder="Re-enter your password" [(ngModel)]="confirmValue"
+                            #confirmPassword="ngModel" required />
+                        <button type="button" class="field__toggle" (click)="showConfirm = !showConfirm" tabindex="-1">
+                            <span class="material-icons">{{ showConfirm ? 'visibility_off' : 'visibility' }}</span>
+                        </button>
+                        <span class="field__status-icon field__status-icon--right2 material-icons"
+                            *ngIf="confirmPassword.touched && confirmValue">
+                            {{ passwordsMatch ? 'check_circle' : 'cancel' }}
+                        </span>
+                    </div>
+                    <span class="field__msg"
+                        *ngIf="confirmPassword.touched && confirmPassword.errors?.['required']">Please confirm your
+                        password.</span>
+                    <span class="field__msg"
+                        *ngIf="confirmPassword.touched && confirmValue && !passwordsMatch">Passwords do not
+                        match.</span>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-submit" [disabled]="loading || signupForm.invalid || !passwordsMatch"
+                    [class.btn-submit--loading]="loading">
+                    <ng-container *ngIf="!loading">
+                        <span>Create account</span>
+                        <span class="material-icons btn-submit__arrow">arrow_forward</span>
+                    </ng-container>
+                    <ng-container *ngIf="loading">
+                        <span class="spinner"></span>
+                        <span>Creating account…</span>
+                    </ng-container>
+                </button>
+
+                <!-- Error banner -->
+                <div class="error-banner" *ngIf="errorMsg">
+                    <span class="material-icons">error_outline</span>
+                    {{ errorMsg }}
+                </div>
+
+                <p class="auth-switch">
+                    Already have an account?
+                    <a routerLink="/login" class="auth-switch__link">Log in →</a>
+                </p>
+
+            </form>
+        </div>
+    </div>
+
+</div>

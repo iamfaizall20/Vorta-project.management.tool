@@ -1,8 +1,9 @@
 <app-navbar></app-navbar>
+
 <!-- Snackbar / Announcement Bar -->
 <div class="announcement-bar" [class.visible]="showAnnouncement">
     <span class="announcement-icon">✦</span>
-    <span>Welcome to <strong>TaskFlow</strong> — Your productivity, reimagined.</span>
+    <span><strong>Vorta 1.0</strong> is live — Built for teams who ship.</span>
     <button class="announcement-close" (click)="showAnnouncement = false">✕</button>
 </div>
 
@@ -19,27 +20,27 @@
         </div>
 
         <h1 class="hero-title">
-            Tasks that move<br />
-            <span class="title-accent">as fast as you do.</span>
+            Manage projects.<br />
+            <span class="title-accent">Ship with your team.</span>
         </h1>
 
         <p class="hero-subtitle">
-            TaskFlow is a blazing-fast, lightweight todo app built for makers who hate clutter.
-            Focus on what matters — we handle the rest.
+            Vorta gives managers full control — create teams, assign work, and track
+            every project from kickoff to completion. All in one focused workspace.
         </p>
 
         <div class="hero-actions">
             <button class="btn-primary" (click)="onGetStarted()">
-                <span>Get started for free</span>
+                <span>Start managing for free</span>
                 <span class="btn-icon">→</span>
             </button>
             <button class="btn-ghost" (click)="onTryDemo()">
                 <span class="play-icon">▶</span>
-                Watch a demo
+                See how it works
             </button>
         </div>
 
-        <p class="hero-note">No credit card required &nbsp;·&nbsp; Free forever plan</p>
+        <p class="hero-note">Free forever plan &nbsp;·&nbsp; No credit card required</p>
     </div>
 
     <div class="hero-visual">
@@ -48,36 +49,68 @@
                 <div class="preview-dots">
                     <span></span><span></span><span></span>
                 </div>
-                <span class="preview-title">My Tasks</span>
+                <span class="preview-title">Dashboard — Q4 Launch</span>
             </div>
             <div class="preview-body">
-                <div class="preview-task done">
-                    <span class="task-check">✓</span>
-                    <span>Design landing page</span>
+
+                <!-- Project progress rows -->
+                <div class="preview-project">
+                    <div class="preview-project__top">
+                        <span class="preview-project__name">Backend API</span>
+                        <span class="preview-project__badge active">Active</span>
+                    </div>
+                    <div class="preview-project__meta">
+                        <span>8 / 12 tasks</span>
+                        <span class="preview-project__pct">67%</span>
+                    </div>
+                    <div class="preview-project__bar">
+                        <div class="preview-project__fill" style="width: 67%"></div>
+                    </div>
                 </div>
-                <div class="preview-task done">
-                    <span class="task-check">✓</span>
-                    <span>Set up CI/CD pipeline</span>
+
+                <div class="preview-project">
+                    <div class="preview-project__top">
+                        <span class="preview-project__name">Mobile App Redesign</span>
+                        <span class="preview-project__badge active">Active</span>
+                    </div>
+                    <div class="preview-project__meta">
+                        <span>3 / 10 tasks</span>
+                        <span class="preview-project__pct">30%</span>
+                    </div>
+                    <div class="preview-project__bar">
+                        <div class="preview-project__fill" style="width: 30%"></div>
+                    </div>
                 </div>
-                <div class="preview-task active">
-                    <span class="task-check ring"></span>
-                    <span>Launch beta version</span>
-                    <span class="task-tag">Today</span>
+
+                <div class="preview-project">
+                    <div class="preview-project__top">
+                        <span class="preview-project__name">Auth & Onboarding</span>
+                        <span class="preview-project__badge done">Completed</span>
+                    </div>
+                    <div class="preview-project__meta">
+                        <span>9 / 9 tasks</span>
+                        <span class="preview-project__pct done">100%</span>
+                    </div>
+                    <div class="preview-project__bar">
+                        <div class="preview-project__fill done" style="width: 100%"></div>
+                    </div>
                 </div>
-                <div class="preview-task">
-                    <span class="task-check ring"></span>
-                    <span>Write documentation</span>
+
+                <!-- Team members row -->
+                <div class="preview-team">
+                    <div class="preview-team__avatars">
+                        <span class="avatar" style="background:#00e5c3">FH</span>
+                        <span class="avatar" style="background:#0095ff">AR</span>
+                        <span class="avatar" style="background:#ff4d6d">SZ</span>
+                        <span class="avatar more">+4</span>
+                    </div>
+                    <span class="preview-team__label">7 members across 3 projects</span>
                 </div>
-                <div class="preview-task">
-                    <span class="task-check ring"></span>
-                    <span>Gather user feedback</span>
-                </div>
+
             </div>
             <div class="preview-footer">
-                <span>3 of 5 completed</span>
-                <div class="preview-progress">
-                    <div class="progress-fill" style="width: 60%"></div>
-                </div>
+                <span>2 active &nbsp;·&nbsp; 1 completed</span>
+                <span class="preview-footer__overall">Overall: <strong>59%</strong></span>
             </div>
         </div>
     </div>
@@ -87,7 +120,7 @@
 <section class="features">
     <div class="features-header">
         <span class="section-label">Why TaskFlow?</span>
-        <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+        <h2 class="section-title">Everything a PM needs. Nothing extra.</h2>
     </div>
 
     <div class="features-grid">
@@ -114,12 +147,13 @@
 <!-- CTA Section -->
 <section class="cta-section">
     <div class="cta-inner">
-        <h2 class="cta-title">Ready to get things done?</h2>
-        <p class="cta-sub">Join thousands of focused teams already using TaskFlow.</p>
+        <h2 class="cta-title">Your next project starts here.</h2>
+        <p class="cta-sub">Set up your team, assign work, and ship — all from one workspace.</p>
         <button class="btn-primary large" (click)="onGetStarted()">
-            Start for free — no signup needed
+            Create your free workspace
             <span class="btn-icon">→</span>
         </button>
     </div>
 </section>
+
 <app-footer></app-footer>

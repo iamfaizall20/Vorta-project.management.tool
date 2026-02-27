@@ -1,1 +1,121 @@
-<p>login works!</p>
+<div class="auth-shell">
+
+    <!-- ── Left Panel ──────────────────────────────────────────── -->
+    <div class="auth-left">
+        <div class="auth-left__inner">
+            <div class="brand">
+                <!-- <span class="material-icons brand__icon">task_alt</span> -->
+                <span class="brand__name">Vorta</span>
+            </div>
+
+            <div class="auth-left__body">
+                <h1 class="auth-left__title">Welcome<br /><span class="accent">back.</span></h1>
+                <p class="auth-left__sub">
+                    Your team is waiting. Log back in and pick up right where you left off.
+                </p>
+
+                <div class="testimonial">
+                    <div class="testimonial__avatar">FH</div>
+                    <div class="testimonial__body">
+                        <p class="testimonial__quote">"Vorta cut our project chaos in half on day one."</p>
+                        <span class="testimonial__name">Faizal Hassan — Lead Developer</span>
+                    </div>
+                </div>
+            </div>
+
+            <p class="auth-left__footer">
+                © {{ year }} Vorta &nbsp;·&nbsp;
+                <a href="https://github.com/iamfaizall20" target="_blank" rel="noopener">&#64;faizal hassan</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- ── Right Panel ─────────────────────────────────────────── -->
+    <div class="auth-right">
+        <div class="auth-card">
+
+            <div class="auth-card__head">
+                <h2 class="auth-card__title">Log in to TaskFlow</h2>
+                <p class="auth-card__sub">Enter your credentials to access your workspace.</p>
+            </div>
+
+            <form #loginForm="ngForm" (ngSubmit)="onSubmit(loginForm)" novalidate class="auth-form">
+
+                <!-- Username -->
+                <div class="field" [class.field--error]="username.invalid && username.touched"
+                    [class.field--valid]="username.valid && username.touched">
+                    <label class="field__label" for="username">Username</label>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon-left">person</span>
+                        <input id="username" name="username" type="text" class="field__input"
+                            placeholder="Your username" ngModel #username="ngModel" required />
+                        <span class="field__status-icon material-icons" *ngIf="username.touched">
+                            {{ username.valid ? 'check_circle' : 'cancel' }}
+                        </span>
+                    </div>
+                    <span class="field__msg" *ngIf="username.touched && username.errors?.['required']">
+                        Username is required.
+                    </span>
+                </div>
+
+                <!-- Password -->
+                <div class="field" [class.field--error]="password.invalid && password.touched"
+                    [class.field--valid]="password.valid && password.touched">
+                    <div class="field__label-row">
+                        <label class="field__label" for="password">Password</label>
+                        <a routerLink="/forgot-password" class="field__forgot">Forgot password?</a>
+                    </div>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon-left">lock</span>
+                        <input id="password" name="password" [type]="showPassword ? 'text' : 'password'"
+                            class="field__input" placeholder="Your password" ngModel #password="ngModel" required />
+                        <button type="button" class="field__toggle" (click)="showPassword = !showPassword"
+                            tabindex="-1">
+                            <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                        </button>
+                        <span class="field__status-icon field__status-icon--right2 material-icons"
+                            *ngIf="password.touched">
+                            {{ password.valid ? 'check_circle' : 'cancel' }}
+                        </span>
+                    </div>
+                    <span class="field__msg" *ngIf="password.touched && password.errors?.['required']">
+                        Password is required.
+                    </span>
+                </div>
+
+                <!-- Remember me -->
+                <label class="remember">
+                    <input type="checkbox" name="remember" ngModel class="remember__checkbox" />
+                    <span class="remember__box"></span>
+                    <span class="remember__label">Keep me logged in</span>
+                </label>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-submit" [disabled]="loading || loginForm.invalid"
+                    [class.btn-submit--loading]="loading">
+                    <ng-container *ngIf="!loading">
+                        <span>Log in</span>
+                        <span class="material-icons btn-submit__arrow">arrow_forward</span>
+                    </ng-container>
+                    <ng-container *ngIf="loading">
+                        <span class="spinner"></span>
+                        <span>Logging in…</span>
+                    </ng-container>
+                </button>
+
+                <!-- Error banner -->
+                <div class="error-banner" *ngIf="errorMsg">
+                    <span class="material-icons">error_outline</span>
+                    {{ errorMsg }}
+                </div>
+
+                <p class="auth-switch">
+                    Don't have an account?
+                    <a routerLink="/signup" class="auth-switch__link">Sign up free →</a>
+                </p>
+
+            </form>
+        </div>
+    </div>
+
+</div>

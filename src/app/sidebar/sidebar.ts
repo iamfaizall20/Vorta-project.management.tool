@@ -30,7 +30,7 @@ interface RecentItem {
   styleUrls: ['./sidebar.css'],
 })
 export class Sidebar implements OnInit {
-  isCollapsed = false;
+  isCollapsed = true;
   projectsExpanded = true;
   recentsExpanded = true;
 
@@ -44,29 +44,29 @@ export class Sidebar implements OnInit {
 
   // ── Main navigation ──────────────────────────────────────────
   mainNav: NavItem[] = [
-    { icon: 'grid_view',      label: 'Dashboard',    route: '/app/dashboard' },
-    { icon: 'folder_open',    label: 'Projects',     route: '/app/projects' },
-    { icon: 'task_alt',       label: 'My Tasks',     route: '/app/tasks',    badge: 5 },
-    { icon: 'groups',         label: 'Teams',        route: '/app/teams' },
-    { icon: 'people',         label: 'Members',      route: '/app/members' },
+    { icon: 'grid_view', label: 'Dashboard', route: '/app/dashboard' },
+    { icon: 'folder_open', label: 'Projects', route: '/app/projects' },
+    { icon: 'task_alt', label: 'My Tasks', route: '/app/tasks', badge: 5 },
+    { icon: 'groups', label: 'Teams', route: '/app/teams' },
+    { icon: 'people', label: 'Members', route: '/app/members' },
   ];
 
   // ── Recent projects (replace with ProjectService later) ──────
   recentProjects: RecentProject[] = [
-    { id: 'p1', name: 'Backend API',        color: '#5B5BD6', status: 'active' },
-    { id: 'p2', name: 'Mobile Redesign',    color: '#E54D2E', status: 'active' },
-    { id: 'p3', name: 'Auth & Onboarding',  color: '#30A46C', status: 'completed' },
-    { id: 'p4', name: 'Design System',      color: '#F76B15', status: 'hold' },
+    { id: 'p1', name: 'Backend API', color: '#5B5BD6', status: 'active' },
+    { id: 'p2', name: 'Mobile Redesign', color: '#E54D2E', status: 'active' },
+    { id: 'p3', name: 'Auth & Onboarding', color: '#30A46C', status: 'completed' },
+    { id: 'p4', name: 'Design System', color: '#F76B15', status: 'hold' },
   ];
 
   // ── Recent items ─────────────────────────────────────────────
   recentItems: RecentItem[] = [
-    { icon: 'task_alt',  label: 'Sprint Planning — Task #42', route: '/app/tasks' },
-    { icon: 'folder',    label: 'Backend API',                route: '/app/projects/p1' },
-    { icon: 'person',    label: 'Ali Raza — Profile',         route: '/app/members' },
+    { icon: 'task_alt', label: 'Sprint Planning — Task #42', route: '/app/tasks' },
+    { icon: 'folder', label: 'Backend API', route: '/app/projects/p1' },
+    { icon: 'person', label: 'Ali Raza — Profile', route: '/app/members' },
   ];
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
     const saved = localStorage.getItem('vorta_sidebar_collapsed');

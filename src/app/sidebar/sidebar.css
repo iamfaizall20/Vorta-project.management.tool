@@ -1,7 +1,7 @@
 /* ─── Variables ─────────────────────────────────────────────── */
 :host {
-    --sidebar-w: 240px;
-    --sidebar-w-col: 64px;
+    --sidebar-w: 220px;
+    --sidebar-w-col: 62px;
     --bg: #FFFFFF;
     --bg-hover: #F4F4F5;
     --bg-active: #EDEDF5;
@@ -21,6 +21,7 @@
 
 /* ─── Sidebar Shell ──────────────────────────────────────────── */
 .sidebar {
+    position: relative;
     width: var(--sidebar-w);
     height: 100vh;
     background: var(--bg);
@@ -44,7 +45,8 @@
     padding: 18px 16px 14px;
     border-bottom: 1px solid var(--border);
     min-height: 60px;
-    position: relative;
+    flex-shrink: 0;
+    /* FIX: never shrink the brand row */
 }
 
 .brand-mark {
@@ -103,6 +105,8 @@
 /* ─── New Project Button ─────────────────────────────────────── */
 .sidebar__new {
     padding: 12px 12px 8px;
+    flex-shrink: 0;
+    /* FIX: never shrink */
 }
 
 .new-btn {
@@ -147,11 +151,14 @@
 /* ─── Nav ────────────────────────────────────────────────────── */
 .sidebar__nav {
     flex: 1;
+    /* FIX: takes all remaining space */
     overflow-y: auto;
     overflow-x: hidden;
     padding: 4px 0 8px;
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
+    min-height: 0;
+    /* FIX: required for flex children to scroll properly */
 }
 
 .sidebar__nav::-webkit-scrollbar {
@@ -166,6 +173,7 @@
 /* ─── Nav Section ────────────────────────────────────────────── */
 .nav-section {
     padding: 8px 0 4px;
+    /* FIX: removed background: #000 — this was the black background bug */
 }
 
 .nav-section+.nav-section {
@@ -352,10 +360,7 @@
     color: var(--text-faint) !important;
 }
 
-/* ─── Spacer ─────────────────────────────────────────────────── */
-.sidebar__spacer {
-    flex: 1;
-}
+/* ─── Spacer — REMOVED, sidebar__nav flex:1 handles this now ── */
 
 /* ─── Bottom ─────────────────────────────────────────────────── */
 .sidebar__bottom {
@@ -364,6 +369,8 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    flex-shrink: 0;
+    /* FIX: never shrink, stays pinned to bottom */
 }
 
 /* ─── Profile ────────────────────────────────────────────────── */

@@ -1,1 +1,256 @@
-<p>create-project works!</p>
+<div class="create-project">
+
+    <!-- ── Topbar ─────────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar__left">
+            <nav class="breadcrumb">
+                <a class="breadcrumb__item" routerLink="/app">Vorta</a>
+                <span class="material-icons breadcrumb__sep">chevron_right</span>
+                <a class="breadcrumb__item" routerLink="/app/projects">Projects</a>
+                <span class="material-icons breadcrumb__sep">chevron_right</span>
+                <span class="breadcrumb__item breadcrumb__item--active">New Project</span>
+            </nav>
+        </div>
+        <div class="topbar__right">
+            <button class="btn-ghost" (click)="onCancel()">
+                <span class="material-icons">close</span>
+                Cancel
+            </button>
+        </div>
+    </header>
+
+    <!-- ── Main ───────────────────────────────────────────────── -->
+    <main class="create-project__main">
+
+        <!-- ── Left: Live Preview ─────────────────────────────── -->
+        <div class="preview-col">
+            <div class="preview-col__sticky">
+
+                <p class="preview-col__label">Live Preview</p>
+
+                <!-- Preview Card (mirrors the real ProjectCard) -->
+                <div class="preview-card" [style.--card-accent]="form.color || '#5B5BD6'">
+                    <div class="preview-card__stripe"></div>
+                    <div class="preview-card__body">
+
+                        <div class="preview-card__top">
+                            <span class="preview-card__name">
+                                {{ form.name || 'Project name…' }}
+                            </span>
+                            <span class="preview-card__status-badge" [class]="'status-badge--' + form.status">
+                                {{ form.status || 'new' }}
+                            </span>
+                        </div>
+
+                        <p class="preview-card__desc">
+                            {{ form.description || 'Project description will appear here…' }}
+                        </p>
+
+                        <div class="preview-card__tasks-row">
+                            <span class="material-icons preview-card__task-icon">check_box</span>
+                            <span class="preview-card__task-count">0/0 tasks</span>
+                            <span class="preview-card__pct">0%</span>
+                        </div>
+
+                        <div class="preview-card__progress-bar">
+                            <div class="preview-card__progress-fill" style="width: 0%"
+                                [style.background]="form.color || '#5B5BD6'"></div>
+                        </div>
+
+                        <div class="preview-card__footer">
+                            <!-- Member avatars -->
+                            <div class="member-stack">
+                                <ng-container *ngIf="selectedMembers.length === 0">
+                                    <div class="member-avatar member-avatar--ghost">
+                                        <span class="material-icons" style="font-size:12px">person_add</span>
+                                    </div>
+                                </ng-container>
+                                <div class="member-avatar" *ngFor="let m of selectedMembers.slice(0, 4)"
+                                    [style.background]="m.color" [title]="m.name">
+                                    {{ m.initials }}
+                                </div>
+                                <div class="member-avatar member-avatar--more" *ngIf="selectedMembers.length > 4">
+                                    +{{ selectedMembers.length - 4 }}
+                                </div>
+                            </div>
+
+                            <div class="preview-card__due">
+                                <span class="material-icons">schedule</span>
+                                <span>{{ form.dueDate ? formatDate(form.dueDate) : 'No due date' }}</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Color Palette -->
+                <div class="color-section">
+                    <p class="color-section__label">Project colour</p>
+                    <div class="color-swatches">
+                        <button class="color-swatch" *ngFor="let c of colorOptions" [style.background]="c"
+                            [class.color-swatch--active]="form.color === c" (click)="form.color = c" [title]="c">
+                            <span class="material-icons" *ngIf="form.color === c">check</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── Right: Form ────────────────────────────────────── -->
+        <div class="form-col">
+            <div class="form-col__head">
+                <h1 class="form-col__title">Create a new project</h1>
+                <p class="form-col__sub">Fill in the details below. You can edit everything later.</p>
+            </div>
+
+            <form #projectForm="ngForm" (ngSubmit)="onSubmit(projectForm)" novalidate class="project-form">
+
+                <!-- Project Name -->
+                <div class="field" [class.field--error]="nameField.invalid && nameField.touched"
+                    [class.field--valid]="nameField.valid && nameField.touched">
+                    <label class="field__label" for="proj-name">
+                        Project name <span class="field__required">*</span>
+                    </label>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon">folder_open</span>
+                        <input id="proj-name" name="name" type="text" class="field__input"
+                            placeholder="e.g. Backend API v2" [(ngModel)]="form.name" #nameField="ngModel" required
+                            minlength="3" maxlength="60" />
+                        <span class="field__char-count">{{ (form.name || '').length }}/60</span>
+                    </div>
+                    <span class="field__msg" *ngIf="nameField.touched && nameField.errors?.['required']">Project name is
+                        required.</span>
+                    <span class="field__msg" *ngIf="nameField.touched && nameField.errors?.['minlength']">At least 3
+                        characters.</span>
+                </div>
+
+                <!-- Description -->
+                <div class="field">
+                    <label class="field__label" for="proj-desc">Description</label>
+                    <div class="field__wrap field__wrap--textarea">
+                        <span class="material-icons field__icon field__icon--top">notes</span>
+                        <textarea id="proj-desc" name="description" class="field__input field__textarea"
+                            placeholder="What is this project about? What are the goals?" [(ngModel)]="form.description"
+                            rows="3" maxlength="200"></textarea>
+                        <span class="field__char-count">{{ (form.description || '').length }}/200</span>
+                    </div>
+                </div>
+
+                <!-- Status + Due Date row -->
+                <div class="field-row">
+
+                    <!-- Status -->
+                    <div class="field">
+                        <label class="field__label" for="proj-status">Initial status</label>
+                        <div class="field__wrap field__wrap--select">
+                            <span class="material-icons field__icon">flag</span>
+                            <select id="proj-status" name="status" class="field__input field__select"
+                                [(ngModel)]="form.status">
+                                <option value="new">New</option>
+                                <option value="active">Active</option>
+                                <option value="hold">On Hold</option>
+                            </select>
+                            <span class="material-icons field__select-arrow">expand_more</span>
+                        </div>
+                    </div>
+
+                    <!-- Due Date -->
+                    <div class="field">
+                        <label class="field__label" for="proj-due">Due date</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon">calendar_today</span>
+                            <input id="proj-due" name="dueDate" type="date" class="field__input field__date"
+                                [(ngModel)]="form.dueDate" [min]="today" />
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Team (assign members) -->
+                <div class="field">
+                    <label class="field__label">Team members</label>
+
+                    <!-- Search members -->
+                    <div class="member-search">
+                        <span class="material-icons member-search__icon">search</span>
+                        <input type="text" class="member-search__input" placeholder="Search registered members…"
+                            [(ngModel)]="memberQuery" [ngModelOptions]="{ standalone: true }"
+                            (input)="filterMembers()" />
+                    </div>
+
+                    <!-- Member list -->
+                    <div class="member-list" *ngIf="filteredAvailableMembers.length > 0">
+                        <div class="member-item" *ngFor="let m of filteredAvailableMembers"
+                            [class.member-item--selected]="isMemberSelected(m)" (click)="toggleMember(m)">
+                            <div class="member-item__avatar" [style.background]="m.color">{{ m.initials }}</div>
+                            <div class="member-item__info">
+                                <span class="member-item__name">{{ m.name }}</span>
+                                <span class="member-item__role">{{ m.role }}</span>
+                            </div>
+                            <div class="member-item__check">
+                                <span class="material-icons" *ngIf="isMemberSelected(m)">check_circle</span>
+                                <span class="material-icons" *ngIf="!isMemberSelected(m)">radio_button_unchecked</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="member-empty" *ngIf="filteredAvailableMembers.length === 0 && memberQuery">
+                        <span class="material-icons">search_off</span>
+                        No members found for "{{ memberQuery }}"
+                    </div>
+
+                    <!-- Selected chips -->
+                    <div class="selected-chips" *ngIf="selectedMembers.length > 0">
+                        <div class="chip" *ngFor="let m of selectedMembers">
+                            <div class="chip__avatar" [style.background]="m.color">{{ m.initials }}</div>
+                            <span class="chip__name">{{ m.name }}</span>
+                            <button type="button" class="chip__remove" (click)="removeMember(m)">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Priority -->
+                <div class="field">
+                    <label class="field__label">Priority</label>
+                    <div class="priority-options">
+                        <button type="button" class="priority-btn" *ngFor="let p of priorityOptions"
+                            [class.priority-btn--active]="form.priority === p.value"
+                            [class]="'priority-btn priority-btn--' + p.value + (form.priority === p.value ? ' priority-btn--active' : '')"
+                            (click)="form.priority = p.value">
+                            <span class="material-icons">{{ p.icon }}</span>
+                            {{ p.label }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error banner -->
+                <div class="error-banner" *ngIf="errorMsg">
+                    <span class="material-icons">error_outline</span>
+                    {{ errorMsg }}
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn-ghost" (click)="onCancel()">Cancel</button>
+                    <button type="submit" class="btn-primary" [disabled]="projectForm.invalid || loading"
+                        [class.btn-primary--loading]="loading">
+                         <ng-container *ngIf="!loading">
+                            <span class="material-icons">add</span>
+                            Create project
+                        </ng-container>
+                        <ng-container *ngIf="loading">
+                            <span class="spinner"></span>
+                            Creating…
+                        </ng-container>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+    </main>
+
+</div>

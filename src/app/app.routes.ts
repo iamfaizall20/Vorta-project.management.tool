@@ -11,6 +11,7 @@ import { TeamList } from './teams/team-list/team-list';
 import { Members } from './members/members';
 import { Profile } from './profile/profile';
 import { Settings } from './settings/settings';
+import { CreateProject } from './projects/create-project/create-project';
 
 export const routes: Routes = [
 
@@ -26,8 +27,16 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: Dashboard },
-      { path: 'projects', component: ProjectList },
-      { path: 'projects/:id', component: ProjectDetail },
+
+      {
+        path: 'projects',
+        children: [
+          { path: '', component: ProjectList },
+          { path: 'new', component: CreateProject },
+          { path: ':id', component: ProjectDetail }
+        ]
+      },
+
       { path: 'tasks', component: TaskList },
       { path: 'teams', component: TeamList },
       { path: 'members', component: Members },

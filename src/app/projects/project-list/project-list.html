@@ -1,1 +1,266 @@
-<p>project-list works!</p>
+<div class="project-list">
+
+    <!-- ── Topbar ─────────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar__left">
+            <nav class="breadcrumb">
+                <a class="breadcrumb__item" routerLink="/app">Vorta</a>
+                <span class="material-icons breadcrumb__sep">chevron_right</span>
+                <span class="breadcrumb__item breadcrumb__item--active">Projects</span>
+            </nav>
+        </div>
+        <div class="topbar__right">
+            <button class="btn-primary" (click)="onNewProject()">
+                <span class="material-icons">add</span>
+                New Project
+            </button>
+        </div>
+    </header>
+
+    <!-- ── Main ───────────────────────────────────────────────── -->
+    <main class="pl-main">
+
+        <!-- ── Page heading + stats ─────────────────────────────── -->
+        <div class="page-head">
+            <div class="page-head__text">
+                <h1 class="page-head__title">Projects</h1>
+                <p class="page-head__sub">{{ projects.length }} total &nbsp;·&nbsp; {{ activeCount }} active
+                    &nbsp;·&nbsp; {{ completedCount }} completed</p>
+            </div>
+        </div>
+
+        <!-- ── Toolbar ───────────────────────────────────────────── -->
+        <div class="toolbar">
+
+            <!-- Search -->
+            <div class="search-box" [class.search-box--open]="searchFocused">
+                <span class="material-icons search-box__icon">search</span>
+                <input type="text" class="search-box__input" placeholder="Search projects…" [(ngModel)]="searchQuery"
+                    (focus)="searchFocused = true" (blur)="searchFocused = false" />
+                <span class="material-icons search-box__clear" *ngIf="searchQuery"
+                    (click)="searchQuery = ''">close</span>
+            </div>
+
+            <!-- Status filter pills -->
+            <div class="filter-pills">
+                <button class="filter-pill" *ngFor="let f of filters"
+                    [class.filter-pill--active]="activeFilter === f.value" (click)="setFilter(f.value)">
+                    <span class="filter-pill__dot" *ngIf="f.color" [style.background]="f.color"></span>
+                    {{ f.label }}
+                    <span class="filter-pill__count">{{ getCountByStatus(f.value) }}</span>
+                </button>
+            </div>
+
+            <!-- View toggle -->
+            <div class="view-toggle">
+                <button class="view-btn" [class.view-btn--active]="viewMode === 'grid'" (click)="viewMode = 'grid'"
+                    title="Grid">
+                    <span class="material-icons">grid_view</span>
+                </button>
+                <button class="view-btn" [class.view-btn--active]="viewMode === 'list'" (click)="viewMode = 'list'"
+                    title="List">
+                    <span class="material-icons">view_list</span>
+                </button>
+            </div>
+
+            <!-- Sort -->
+            <div class="sort-wrap">
+                <span class="material-icons sort-wrap__icon">sort</span>
+                <select class="sort-select" [(ngModel)]="sortBy">
+                    <option value="name">Name</option>
+                    <option value="status">Status</option>
+                    <option value="progress">Progress</option>
+                    <option value="dueDate">Due date</option>
+                </select>
+                <span class="material-icons sort-wrap__arrow">expand_more</span>
+            </div>
+
+        </div>
+
+        <!-- ── GRID VIEW ─────────────────────────────────────────── -->
+        <div class="projects-grid" *ngIf="viewMode === 'grid'">
+
+            <!-- New Project quick-add card -->
+            <div class="project-card project-card--new" (click)="onNewProject()">
+                <span class="material-icons project-card--new__icon">add_circle_outline</span>
+                <span class="project-card--new__label">New Project</span>
+            </div>
+
+            <div class="project-card" *ngFor="let p of filteredProjects; let i = index" [style.--card-color]="p.color"
+                [style.animation-delay]="(i * 0.05) + 's'" (click)="openProject(p.id)">
+
+                <!-- Top colour bar -->
+                <div class="project-card__bar" [style.background]="p.color"></div>
+
+                <div class="project-card__body">
+                    <!-- Header -->
+                    <div class="project-card__header">
+                        <div class="project-card__dot" [style.background]="p.color"></div>
+                        <span class="project-card__name">{{ p.name }}</span>
+                        <button class="project-card__menu" (click)="$event.stopPropagation(); onMenuClick(p, $event)">
+                            <span class="material-icons">more_vert</span>
+                        </button>
+                    </div>
+
+                    <!-- Status + priority -->
+                    <div class="project-card__badges">
+                        <span class="status-badge" [class]="'status-badge--' + p.status">{{ p.status | titlecase
+                            }}</span>
+                        <span class="priority-badge" [class]="'priority-badge--' + p.priority">
+                            <span class="material-icons">{{ getPriorityIcon(p.priority) }}</span>
+                            {{ p.priority }}
+                        </span>
+                    </div>
+
+                    <!-- Description -->
+                    <p class="project-card__desc">{{ p.description || 'No description provided.' }}</p>
+
+                    <!-- Progress -->
+                    <div class="project-card__progress">
+                        <div class="progress-row">
+                            <span class="progress-label">{{ getProgress(p) }}% complete</span>
+                            <span class="progress-tasks">{{ getCompletedTasks(p) }}/{{ p.tasks?.length || 0 }}
+                                tasks</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-bar__fill" [style.width]="getProgress(p) + '%'"
+                                [style.background]="p.color"></div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="project-card__footer">
+                        <!-- Member avatars -->
+                        <div class="member-stack">
+                            <div class="member-avatar" *ngFor="let m of (p.members || []).slice(0, 4)"
+                                [style.background]="m.color" [title]="m.name">
+                                {{ m.initials }}
+                            </div>
+                            <div class="member-avatar member-avatar--more" *ngIf="(p.members || []).length > 4">
+                                +{{ p.members.length - 4 }}
+                            </div>
+                            <span class="member-count" *ngIf="(p.members || []).length === 0">No members</span>
+                        </div>
+
+                        <!-- Due date -->
+                        <div class="due-chip" [class.due-chip--overdue]="isOverdue(p.dueDate)" *ngIf="p.dueDate">
+                            <span class="material-icons">schedule</span>
+                            {{ formatDate(p.dueDate) }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── LIST VIEW ─────────────────────────────────────────── -->
+        <div class="projects-list-view" *ngIf="viewMode === 'list'">
+
+            <!-- List header -->
+            <div class="list-header">
+                <span class="lh-col lh-col--name">Project</span>
+                <span class="lh-col">Status</span>
+                <span class="lh-col">Priority</span>
+                <span class="lh-col">Progress</span>
+                <span class="lh-col">Team</span>
+                <span class="lh-col">Due</span>
+                <span class="lh-col"></span>
+            </div>
+
+            <div class="list-project-row" *ngFor="let p of filteredProjects; let i = index"
+                [style.animation-delay]="(i * 0.04) + 's'" (click)="openProject(p.id)">
+
+                <!-- Name + dot -->
+                <div class="lh-col lh-col--name">
+                    <div class="list-dot" [style.background]="p.color"></div>
+                    <div class="list-project-info">
+                        <span class="list-project-name">{{ p.name }}</span>
+                        <span class="list-project-desc">{{ p.description | slice:0:60 }}{{ (p.description?.length || 0)
+                            > 60 ? '…' : '' }}</span>
+                    </div>
+                </div>
+
+                <div class="lh-col">
+                    <span class="status-badge" [class]="'status-badge--' + p.status">{{ p.status | titlecase }}</span>
+                </div>
+
+                <div class="lh-col">
+                    <span class="priority-badge" [class]="'priority-badge--' + p.priority">
+                        <span class="material-icons">{{ getPriorityIcon(p.priority) }}</span>
+                        {{ p.priority }}
+                    </span>
+                </div>
+
+                <div class="lh-col lh-col--progress">
+                    <div class="list-progress-bar">
+                        <div class="list-progress-fill" [style.width]="getProgress(p) + '%'"
+                            [style.background]="p.color"></div>
+                    </div>
+                    <span class="list-pct">{{ getProgress(p) }}%</span>
+                </div>
+
+                <div class="lh-col">
+                    <div class="member-stack">
+                        <div class="member-avatar member-avatar--sm" *ngFor="let m of (p.members || []).slice(0, 3)"
+                            [style.background]="m.color" [title]="m.name">{{ m.initials }}</div>
+                        <div class="member-avatar member-avatar--sm member-avatar--more"
+                            *ngIf="(p.members || []).length > 3">+{{ p.members.length - 3 }}</div>
+                    </div>
+                </div>
+
+                <div class="lh-col list-due" [class.list-due--overdue]="p.dueDate && isOverdue(p.dueDate)">
+                    {{ p.dueDate ? formatDate(p.dueDate) : '—' }}
+                </div>
+
+                <div class="lh-col lh-col--actions" (click)="$event.stopPropagation()">
+                    <button class="icon-btn" (click)="openProject(p.id)" title="Open">
+                        <span class="material-icons">arrow_forward</span>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Empty -->
+            <div class="list-empty" *ngIf="filteredProjects.length === 0">
+                <span class="material-icons">folder_off</span>
+                <span>No projects match your filters</span>
+                <button class="btn-ghost" (click)="clearFilters()">Clear filters</button>
+            </div>
+
+        </div>
+
+        <!-- Grid empty -->
+        <div class="grid-empty" *ngIf="viewMode === 'grid' && filteredProjects.length === 0">
+            <span class="material-icons">folder_off</span>
+            <h3>No projects found</h3>
+            <p>Try changing your filters or create a new project.</p>
+            <div class="grid-empty__actions">
+                <button class="btn-ghost" (click)="clearFilters()">Clear filters</button>
+                <button class="btn-primary" (click)="onNewProject()">
+                    <span class="material-icons">add</span>
+                    New Project
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ── Context Menu ─────────────────────────────────────────── -->
+    <div class="ctx-menu" *ngIf="menuProject" [style.top]="menuY + 'px'" [style.left]="menuX + 'px'"
+        (clickOutside)="menuProject = null">
+        <button class="ctx-item" (click)="openProject(menuProject.id); menuProject = null">
+            <span class="material-icons">open_in_new</span> Open
+        </button>
+        <button class="ctx-item" (click)="onEditProject(menuProject); menuProject = null">
+            <span class="material-icons">edit</span> Edit
+        </button>
+        <div class="ctx-divider"></div>
+        <button class="ctx-item ctx-item--danger" (click)="onDeleteProject(menuProject); menuProject = null">
+            <span class="material-icons">delete_outline</span> Delete
+        </button>
+    </div>
+
+    <!-- Backdrop to close menu -->
+    <div class="ctx-backdrop" *ngIf="menuProject" (click)="menuProject = null"></div>
+
+</div>

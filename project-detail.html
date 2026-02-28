@@ -1,0 +1,467 @@
+<div class="project-detail" *ngIf="project; else loading">
+
+    <!-- ── Project colour accent bar ─────────────────────────── -->
+    <div class="project-accent-bar" [style.background]="project.color"></div>
+
+    <!-- ── Topbar ─────────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar__left">
+            <button class="back-btn" (click)="goBack()">
+                <span class="material-icons">arrow_back</span>
+            </button>
+            <nav class="breadcrumb">
+                <a class="breadcrumb__item" routerLink="/app">Vorta</a>
+                <span class="material-icons breadcrumb__sep">chevron_right</span>
+                <a class="breadcrumb__item" routerLink="/app/projects">Projects</a>
+                <span class="material-icons breadcrumb__sep">chevron_right</span>
+                <span class="breadcrumb__item breadcrumb__item--active">{{ project.name }}</span>
+            </nav>
+        </div>
+        <div class="topbar__right">
+            <button class="btn-ghost btn-sm" (click)="onEditProject()">
+                <span class="material-icons">edit</span>
+                Edit
+            </button>
+            <button class="btn-danger btn-sm" (click)="confirmDelete = true">
+                <span class="material-icons">delete_outline</span>
+                Delete
+            </button>
+            <button class="btn-primary btn-sm" (click)="openCreateTask()">
+                <span class="material-icons">add</span>
+                Add Task
+            </button>
+        </div>
+    </header>
+
+    <!-- ── Main layout ─────────────────────────────────────────── -->
+    <div class="detail-layout">
+
+        <!-- ── LEFT: Main content ──────────────────────────────── -->
+        <main class="detail-main">
+
+            <!-- Project Hero -->
+            <div class="project-hero">
+                <div class="project-hero__top">
+                    <div class="project-dot" [style.background]="project.color"></div>
+                    <h1 class="project-hero__name">{{ project.name }}</h1>
+                    <span class="status-badge" [class]="'status-badge--' + project.status">
+                        {{ project.status }}
+                    </span>
+                    <span class="priority-badge" [class]="'priority-badge--' + project.priority">
+                        <span class="material-icons">{{ getPriorityIcon(project.priority) }}</span>
+                        {{ project.priority }}
+                    </span>
+                </div>
+
+                <p class="project-hero__desc" *ngIf="project.description">{{ project.description }}</p>
+
+                <!-- Progress -->
+                <div class="progress-section">
+                    <div class="progress-section__meta">
+                        <span class="progress-section__label">Overall progress</span>
+                        <span class="progress-section__pct" [style.color]="project.color">{{ getProgress() }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar__fill" [style.width]="getProgress() + '%'"
+                            [style.background]="project.color"></div>
+                    </div>
+                    <div class="progress-section__counts">
+                        <span>{{ completedCount }} of {{ project.tasks.length }} tasks completed</span>
+                        <span *ngIf="project.dueDate" [class.overdue]="isOverdue(project.dueDate)">
+                            <span class="material-icons" style="font-size:13px;vertical-align:middle">schedule</span>
+                            {{ formatDate(project.dueDate) }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Board Header -->
+            <div class="board-header">
+                <div class="board-header__left">
+                    <h2 class="board-title">Task Board</h2>
+                    <span class="board-count">{{ project.tasks.length }}</span>
+                </div>
+                <div class="board-header__right">
+                    <div class="view-toggle">
+                        <button class="view-btn" [class.view-btn--active]="boardView === 'kanban'"
+                            (click)="boardView = 'kanban'" title="Kanban">
+                            <span class="material-icons">view_kanban</span>
+                        </button>
+                        <button class="view-btn" [class.view-btn--active]="boardView === 'list'"
+                            (click)="boardView = 'list'" title="List">
+                            <span class="material-icons">view_list</span>
+                        </button>
+                    </div>
+                    <button class="btn-primary btn-sm" (click)="openCreateTask()">
+                        <span class="material-icons">add</span>
+                        Add Task
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── KANBAN BOARD ──────────────────────────────────── -->
+            <div class="kanban-board" *ngIf="boardView === 'kanban'">
+                <div class="kanban-col" *ngFor="let col of taskColumns">
+                    <div class="kanban-col__head" [style.border-top-color]="col.color">
+                        <div class="kanban-col__title-wrap">
+                            <span class="kanban-col__dot" [style.background]="col.color"></span>
+                            <span class="kanban-col__title">{{ col.label }}</span>
+                            <span class="kanban-col__count">{{ getTasksByStatus(col.status).length }}</span>
+                        </div>
+                        <button class="kanban-col__add" (click)="openCreateTask(col.status)" title="Add task">
+                            <span class="material-icons">add</span>
+                        </button>
+                    </div>
+
+                    <div class="kanban-cards">
+                        <!-- Task Card -->
+                        <div class="task-card" *ngFor="let t of getTasksByStatus(col.status)"
+                            (click)="openTaskDetail(t)">
+
+                            <div class="task-card__top">
+                                <span class="task-card__title">{{ t.title }}</span>
+                                <button class="task-card__menu" (click)="$event.stopPropagation(); openTaskMenu(t)">
+                                    <span class="material-icons">more_horiz</span>
+                                </button>
+                            </div>
+
+                            <p class="task-card__desc" *ngIf="t.description">{{ t.description }}</p>
+
+                            <div class="task-card__footer">
+                                <div class="task-card__assignee" *ngIf="t.assignee">
+                                    <div class="assignee-avatar" [style.background]="t.assignee.color"
+                                        [title]="t.assignee.name">
+                                        {{ t.assignee.initials }}
+                                    </div>
+                                    <span class="assignee-name">{{ t.assignee.name.split(' ')[0] }}</span>
+                                </div>
+                                <div class="task-card__right">
+                                    <span class="task-priority-badge" [class]="'task-priority--' + t.priority">{{
+                                        t.priority }}</span>
+                                    <span class="task-due" *ngIf="t.dueDate"
+                                        [class.task-due--overdue]="isOverdue(t.dueDate)">
+                                        <span class="material-icons">event</span>
+                                        {{ formatDate(t.dueDate) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Status change buttons (member action) -->
+                            <div class="task-card__actions" (click)="$event.stopPropagation()">
+                                <button class="status-btn" *ngFor="let s of quickStatuses"
+                                    [class.status-btn--active]="t.status === s.value" [style.--btn-color]="s.color"
+                                    (click)="updateTaskStatus(t, s.value)" [title]="s.label">
+                                    <span class="material-icons">{{ s.icon }}</span>
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <!-- Empty col -->
+                        <div class="col-empty" *ngIf="getTasksByStatus(col.status).length === 0">
+                            <span class="material-icons col-empty__icon">inbox</span>
+                            <span>No {{ col.label.toLowerCase() }} tasks</span>
+                            <button class="col-empty__add" (click)="openCreateTask(col.status)">+ Add task</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── LIST VIEW ─────────────────────────────────────── -->
+            <div class="list-view" *ngIf="boardView === 'list'">
+                <div class="list-header-row">
+                    <span class="list-col list-col--title">Task</span>
+                    <span class="list-col">Assignee</span>
+                    <span class="list-col">Priority</span>
+                    <span class="list-col">Status</span>
+                    <span class="list-col">Due</span>
+                    <span class="list-col"></span>
+                </div>
+                <div class="list-task-row" *ngFor="let t of project.tasks"
+                    [class.list-task-row--done]="t.status === 'done'" (click)="openTaskDetail(t)">
+                    <span class="list-col list-col--title">
+                        <span class="list-task-check" [class.list-task-check--done]="t.status === 'done'"
+                            (click)="$event.stopPropagation(); quickToggleDone(t)">
+                            <span class="material-icons" *ngIf="t.status === 'done'">check</span>
+                        </span>
+                        {{ t.title }}
+                    </span>
+                    <span class="list-col">
+                        <div class="assignee-avatar assignee-avatar--sm" *ngIf="t.assignee"
+                            [style.background]="t.assignee.color" [title]="t.assignee.name">
+                            {{ t.assignee.initials }}
+                        </div>
+                        <span class="list-unassigned" *ngIf="!t.assignee">—</span>
+                    </span>
+                    <span class="list-col">
+                        <span class="task-priority-badge" [class]="'task-priority--' + t.priority">{{ t.priority
+                            }}</span>
+                    </span>
+                    <span class="list-col">
+                        <span class="status-chip" [class]="'status-chip--' + t.status">{{ t.status | titlecase }}</span>
+                    </span>
+                    <span class="list-col list-due-col" [class.overdue]="t.dueDate && isOverdue(t.dueDate)">
+                        {{ t.dueDate ? formatDate(t.dueDate) : '—' }}
+                    </span>
+                    <span class="list-col list-col--actions" (click)="$event.stopPropagation()">
+                        <button class="icon-btn-sm" (click)="openTaskDetail(t)" title="View">
+                            <span class="material-icons">open_in_new</span>
+                        </button>
+                    </span>
+                </div>
+                <div class="list-empty" *ngIf="project.tasks.length === 0">
+                    <span class="material-icons">task_alt</span>
+                    <span>No tasks yet — add your first one</span>
+                    <button class="btn-primary btn-sm" (click)="openCreateTask()">
+                        <span class="material-icons">add</span> Add Task
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ── RIGHT: Sidebar panels ───────────────────────────── -->
+        <aside class="detail-sidebar">
+
+            <!-- Team -->
+            <div class="panel">
+                <div class="panel__head">
+                    <h3 class="panel__title">Team</h3>
+                    <span class="panel__count">{{ project.members.length }}</span>
+                </div>
+                <div class="panel__body">
+                    <div class="team-member" *ngFor="let m of project.members">
+                        <div class="team-member__avatar" [style.background]="m.color">{{ m.initials }}</div>
+                        <div class="team-member__info">
+                            <span class="team-member__name">{{ m.name }}</span>
+                            <span class="team-member__tasks">{{ getMemberTaskCount(m.id) }} tasks assigned</span>
+                        </div>
+                        <span class="team-member__role-badge">{{ m.role }}</span>
+                    </div>
+                    <div class="panel__empty" *ngIf="project.members.length === 0">
+                        <span class="material-icons">group_add</span>
+                        No members yet
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="panel">
+                <div class="panel__head">
+                    <h3 class="panel__title">Overview</h3>
+                </div>
+                <div class="panel__body panel__body--stats">
+                    <div class="stat-mini" *ngFor="let s of projectStats">
+                        <div class="stat-mini__icon-wrap" [style.background]="s.bg">
+                            <span class="material-icons stat-mini__icon" [style.color]="s.color">{{ s.icon }}</span>
+                        </div>
+                        <div class="stat-mini__body">
+                            <span class="stat-mini__value">{{ s.value }}</span>
+                            <span class="stat-mini__label">{{ s.label }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity -->
+            <div class="panel">
+                <div class="panel__head">
+                    <h3 class="panel__title">Activity</h3>
+                </div>
+                <div class="panel__body">
+                    <div class="activity-row" *ngFor="let a of activity">
+                        <div class="activity-avatar" [style.background]="a.color">{{ a.initials }}</div>
+                        <div class="activity-body">
+                            <p class="activity-text">
+                                <strong>{{ a.actor }}</strong> {{ a.action }}
+                                <span class="activity-target">{{ a.target }}</span>
+                            </p>
+                            <span class="activity-time">{{ a.time }}</span>
+                        </div>
+                    </div>
+                    <div class="panel__empty" *ngIf="activity.length === 0">
+                        <span class="material-icons">history</span>
+                        No activity yet
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+    </div>
+
+</div>
+
+<!-- ── Loading state ──────────────────────────────────────────── -->
+<ng-template #loading>
+    <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <span>Loading project…</span>
+    </div>
+</ng-template>
+
+<!-- ── Delete confirm modal ───────────────────────────────────── -->
+<div class="modal-backdrop" *ngIf="confirmDelete" (click)="confirmDelete = false">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+        <div class="confirm-modal__icon">
+            <span class="material-icons">delete_forever</span>
+        </div>
+        <h3 class="confirm-modal__title">Delete project?</h3>
+        <p class="confirm-modal__msg">
+            <strong>{{ project?.name }}</strong> and all its tasks will be permanently deleted. This cannot be undone.
+        </p>
+        <div class="confirm-modal__actions">
+            <button class="btn-ghost" (click)="confirmDelete = false">Cancel</button>
+            <button class="btn-danger" (click)="onDeleteProject()">
+                <span class="material-icons">delete_forever</span>
+                Yes, delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Task Detail side drawer ────────────────────────────────── -->
+<div class="drawer-backdrop" *ngIf="selectedTask" (click)="selectedTask = null"></div>
+<div class="task-drawer" [class.task-drawer--open]="selectedTask !== null" *ngIf="selectedTask">
+    <div class="task-drawer__head">
+        <div class="task-drawer__title-row">
+            <span class="task-priority-badge" [class]="'task-priority--' + selectedTask.priority">{{
+                selectedTask.priority }}</span>
+            <button class="icon-btn-sm" (click)="selectedTask = null"><span class="material-icons">close</span></button>
+        </div>
+        <h2 class="task-drawer__title">{{ selectedTask.title }}</h2>
+    </div>
+    <div class="task-drawer__body">
+        <p class="task-drawer__desc" *ngIf="selectedTask.description">{{ selectedTask.description }}</p>
+        <p class="task-drawer__desc task-drawer__desc--empty" *ngIf="!selectedTask.description">No description added.
+        </p>
+
+        <div class="drawer-field">
+            <span class="drawer-field__label">Status</span>
+            <div class="drawer-status-btns">
+                <button *ngFor="let s of quickStatuses" class="drawer-status-btn"
+                    [class.drawer-status-btn--active]="selectedTask.status === s.value" [style.--btn-color]="s.color"
+                    (click)="updateTaskStatus(selectedTask, s.value)">
+                    <span class="material-icons">{{ s.icon }}</span>
+                    {{ s.label }}
+                </button>
+            </div>
+        </div>
+
+        <div class="drawer-field">
+            <span class="drawer-field__label">Assignee</span>
+            <div class="drawer-assignee" *ngIf="selectedTask.assignee">
+                <div class="assignee-avatar" [style.background]="selectedTask.assignee.color">{{
+                    selectedTask.assignee.initials }}</div>
+                <span>{{ selectedTask.assignee.name }}</span>
+            </div>
+            <span class="drawer-unassigned" *ngIf="!selectedTask.assignee">Unassigned</span>
+        </div>
+
+        <div class="drawer-field" *ngIf="selectedTask.dueDate">
+            <span class="drawer-field__label">Due date</span>
+            <span [class.overdue]="isOverdue(selectedTask.dueDate)">{{ formatDate(selectedTask.dueDate) }}</span>
+        </div>
+
+        <div class="drawer-actions">
+            <button class="btn-ghost btn-sm" (click)="onEditTask(selectedTask)">
+                <span class="material-icons">edit</span> Edit task
+            </button>
+            <button class="btn-danger btn-sm" (click)="onDeleteTask(selectedTask)">
+                <span class="material-icons">delete_outline</span> Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Create Task drawer ─────────────────────────────────────── -->
+<div class="drawer-backdrop" *ngIf="showCreateTask" (click)="closeCreateTask()"></div>
+<div class="task-drawer task-drawer--create" [class.task-drawer--open]="showCreateTask">
+    <div class="task-drawer__head">
+        <h2 class="task-drawer__title">New Task</h2>
+        <button class="icon-btn-sm" (click)="closeCreateTask()"><span class="material-icons">close</span></button>
+    </div>
+    <div class="task-drawer__body">
+        <form #taskForm="ngForm" (ngSubmit)="onCreateTask(taskForm)" novalidate class="task-form">
+
+            <!-- Title -->
+            <div class="field" [class.field--error]="titleField.invalid && titleField.touched">
+                <label class="field__label">Task title <span class="field__required">*</span></label>
+                <input name="title" type="text" class="field__input" placeholder="e.g. Set up database schema"
+                    [(ngModel)]="taskDraft.title" #titleField="ngModel" required minlength="3" />
+                <span class="field__msg" *ngIf="titleField.touched && titleField.errors?.['required']">Title is
+                    required.</span>
+            </div>
+
+            <!-- Description -->
+            <div class="field">
+                <label class="field__label">Description</label>
+                <textarea name="description" class="field__input field__textarea" placeholder="What needs to be done?"
+                    [(ngModel)]="taskDraft.description" rows="3"></textarea>
+            </div>
+
+            <!-- Assign to -->
+            <div class="field">
+                <label class="field__label">Assign to <span class="field__required">*</span></label>
+                <div class="field__wrap field__wrap--select">
+                    <span class="material-icons field__icon">person</span>
+                    <select name="assigneeId" class="field__input field__select" [(ngModel)]="taskDraft.assigneeId"
+                        required>
+                        <option value="">— Select member —</option>
+                        <option *ngFor="let m of project!.members" [value]="m.id">{{ m.name }} ({{ m.role }})</option>
+                    </select>
+                    <span class="material-icons field__select-arrow">expand_more</span>
+                </div>
+            </div>
+
+            <!-- Priority -->
+            <div class="field">
+                <label class="field__label">Priority</label>
+                <div class="priority-options">
+                    <button type="button" class="priority-btn" *ngFor="let p of priorityOptions"
+                        [class.priority-btn--active]="taskDraft.priority === p.value"
+                        [class]="'priority-btn priority-btn--' + p.value + (taskDraft.priority === p.value ? ' priority-btn--active' : '')"
+                        (click)="taskDraft.priority = p.value">
+                        <span class="material-icons">{{ p.icon }}</span>
+                        {{ p.label }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="field">
+                <label class="field__label">Initial status</label>
+                <div class="field__wrap field__wrap--select">
+                    <span class="material-icons field__icon">flag</span>
+                    <select name="status" class="field__input field__select" [(ngModel)]="taskDraft.status">
+                        <option value="todo">Todo</option>
+                        <option value="inprogress">In Progress</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
+                    <span class="material-icons field__select-arrow">expand_more</span>
+                </div>
+            </div>
+
+            <!-- Due Date -->
+            <div class="field">
+                <label class="field__label">Due date</label>
+                <div class="field__wrap">
+                    <span class="material-icons field__icon">calendar_today</span>
+                    <input name="dueDate" type="date" class="field__input field__date" [(ngModel)]="taskDraft.dueDate"
+                        [min]="today" />
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-ghost btn-sm" (click)="closeCreateTask()">Cancel</button>
+                <button type="submit" class="btn-primary btn-sm" [disabled]="taskForm.invalid || taskCreating"
+                    [class.btn-primary--loading]="taskCreating">
+                    <span class="spinner" *ngIf="taskCreating"></span>
+                    <span class="material-icons" *ngIf="!taskCreating">add</span>
+                    {{ taskCreating ? 'Adding…' : 'Add Task' }}
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>

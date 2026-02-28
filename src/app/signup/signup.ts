@@ -1,20 +1,19 @@
-// ============================================
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, HttpClientModule],
   templateUrl: './signup.html',
   styleUrls: ['./signup.css'],
 })
 export class Signup {
   year = new Date().getFullYear();
-
-  // ── Form state ──────────────────────────────────────────────
+  fullNameValue = '';
   passwordValue = '';
   confirmValue = '';
   showPassword = false;
@@ -22,16 +21,13 @@ export class Signup {
   loading = false;
   errorMsg = '';
 
-  // ── Password rule flags ─────────────────────────────────────
   ruleLength = false;
   ruleUpper = false;
   ruleNumber = false;
   ruleSpecial = false;
 
-  // Password must have ≥8 chars, 1 uppercase, 1 number, 1 special char
   readonly passwordPattern = '^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};\':"\\\\|,.<>\\/?]).{8,}$';
 
-  // ── Left panel features ─────────────────────────────────────
   features = [
     { icon: 'bolt', text: 'Lightning-fast task assignment' },
     { icon: 'group', text: 'Real-time team collaboration' },
@@ -39,11 +35,9 @@ export class Signup {
     { icon: 'lock', text: 'End-to-end privacy by default' },
   ];
 
-  // ── Getters ─────────────────────────────────────────────────
-  get passwordsMatch(): boolean {
-    return this.passwordValue === this.confirmValue;
-  }
+  constructor(private router: Router, private http: HttpClient) {}
 
+  get passwordsMatch(): boolean { return this.passwordValue === this.confirmValue; }
   get strengthScore(): number {
     let score = 0;
     if (this.ruleLength) score++;
@@ -52,15 +46,10 @@ export class Signup {
     if (this.ruleSpecial) score++;
     return score;
   }
-
-  get strengthPercent(): number {
-    return (this.strengthScore / 4) * 100;
-  }
-
+  get strengthPercent(): number { return (this.strengthScore / 4) * 100; }
   get strengthLabel(): string {
     switch (this.strengthScore) {
-      case 0:
-      case 1: return 'Weak';
+      case 0: case 1: return 'Weak';
       case 2: return 'Fair';
       case 3: return 'Good';
       case 4: return 'Strong';
@@ -68,7 +57,6 @@ export class Signup {
     }
   }
 
-  // ── Methods ─────────────────────────────────────────────────
   onPasswordInput(): void {
     const v = this.passwordValue;
     this.ruleLength = v.length >= 8;
@@ -80,30 +68,36 @@ export class Signup {
   onSubmit(form: NgForm): void {
     if (form.invalid || !this.passwordsMatch) {
       form.form.markAllAsTouched();
+      this.errorMsg = !this.passwordsMatch ? 'Passwords do not match.' : '';
+      return;
+    }
+
+    if (!new RegExp(this.passwordPattern).test(this.passwordValue)) {
+      this.errorMsg = 'Password does not meet the required rules.';
       return;
     }
 
     this.loading = true;
     this.errorMsg = '';
 
-    // Simulate API call — replace with real AuthService call later
-    setTimeout(() => {
-      // Mock: save user to localStorage
-      const user = {
-        id: Date.now().toString(),
-        username: form.value.username,
-        email: form.value.email,
-        role: 'Member',
-        joinedAt: new Date().toISOString(),
-        theme: 'dark',
-      };
-      localStorage.setItem('tf_user', JSON.stringify(user));
-      localStorage.setItem('tf_token', 'mock-token-' + user.id);
+    const payload = {
+      full_name: this.fullNameValue,
+      username: form.value.username,
+      email: form.value.email,
+      password: this.passwordValue,
+    };
 
-      this.loading = false;
-      this.router.navigate(['/app/dashboard']);
-    }, 1800);
+    this.http.post('http://localhost/VortaAppApis/auth/signup.php', payload).subscribe({
+      next: (res: any) => {
+        this.loading = false;
+        if (res.response) this.router.navigate(['/login']);
+        else this.errorMsg = res.message || 'Signup failed. Try again.';
+      },
+      error: (err) => {
+        this.loading = false;
+        this.errorMsg = 'Server error. Please try again later.';
+        console.error(err);
+      }
+    });
   }
-
-  constructor(private router: Router) { }
 }

@@ -73,6 +73,10 @@ export class Sidebar implements OnInit {
     if (saved !== null) {
       this.isCollapsed = saved === 'true';
     }
+
+    const user = JSON.parse(localStorage.getItem('user')!);
+
+    this.currentUser.name = user.full_name;
   }
 
   toggleCollapse(): void {

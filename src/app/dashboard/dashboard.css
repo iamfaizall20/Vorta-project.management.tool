@@ -1,3 +1,6 @@
+/* ─── Import DM Sans & Instrument Serif ─────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Instrument+Serif:ital@1&display=swap');
+
 /* ─── Variables ─────────────────────────────────────────────── */
 :host {
     --bg: #FAFAF8;
@@ -24,8 +27,6 @@
     font-family: 'DM Sans', system-ui, sans-serif;
 }
 
-/* ─── Import DM Sans & Instrument Serif ─────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Instrument+Serif:ital@1&display=swap');
 
 /* ─── Top Bar ────────────────────────────────────────────────── */
 .dashboard {

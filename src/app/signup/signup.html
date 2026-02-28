@@ -60,7 +60,25 @@
                     <span class="field__msg" *ngIf="username.touched && username.errors?.['pattern']">Letters, numbers
                         and underscores only.</span>
                 </div>
-
+                <!-- Full Name -->
+                <div class="field" [class.field--error]="fullName.invalid && fullName.touched"
+                    [class.field--valid]="fullName.valid && fullName.touched">
+                    <label class="field__label" for="fullName">Full Name</label>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon-left">badge</span>
+                        <input id="fullName" name="fullName" type="text" class="field__input" placeholder="John Doe"
+                            [(ngModel)]="fullNameValue" #fullName="ngModel" required minlength="3" />
+                        <span class="field__status-icon material-icons" *ngIf="fullName.touched">
+                            {{ fullName.valid ? 'check_circle' : 'cancel' }}
+                        </span>
+                    </div>
+                    <span class="field__msg" *ngIf="fullName.touched && fullName.errors?.['required']">
+                        Full name is required.
+                    </span>
+                    <span class="field__msg" *ngIf="fullName.touched && fullName.errors?.['minlength']">
+                        At least 3 characters.
+                    </span>
+                </div>
                 <!-- Email -->
                 <div class="field" [class.field--error]="email.invalid && email.touched"
                     [class.field--valid]="email.valid && email.touched">

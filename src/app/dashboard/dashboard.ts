@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 interface Member {
   name: string;
@@ -51,17 +51,18 @@ interface Activity {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.css'],
 })
 export class Dashboard implements OnInit {
 
   // ── Current user ──────────────────────────────────────────────
+  user: any = {};
   currentUser = {
-    name: 'Faizal Hassan',
-    firstName: 'Faizal',
-    initials: 'FH',
+    name: '',
+    firstName: '',
+    initials: '',
   };
 
   // ── UI state ──────────────────────────────────────────────────
@@ -98,7 +99,6 @@ export class Dashboard implements OnInit {
   ];
 
   // ── Mock Projects ─────────────────────────────────────────────
-  // Replace array contents with API response later
   projects: Project[] = [
     {
       id: 'p1',
@@ -269,11 +269,21 @@ export class Dashboard implements OnInit {
     });
   }
 
-  // ── Methods ───────────────────────────────────────────────────
+  // ── Lifecycle ─────────────────────────────────────────────────
   constructor(private router: Router) { }
 
-  ngOnInit(): void { }
+  ngOnInit(): void {
+    this.user = JSON.parse(localStorage.getItem('user') || '{}');
+    const fullName = this.user.full_name || '';
+    this.currentUser.name = fullName;
+    this.currentUser.firstName = fullName.split(' ')[0] || '';
+    this.currentUser.initials = (fullName
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('') || '').toUpperCase();
+  }
 
+  // ── Methods ───────────────────────────────────────────────────
   getFilteredProjects(status: string): Project[] {
     return this.projects.filter(p => {
       const matchesStatus = p.status === status;

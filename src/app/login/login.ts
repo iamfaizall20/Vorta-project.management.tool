@@ -1,24 +1,23 @@
-// ======================================
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, HttpClientModule],
   templateUrl: './login.html',
   styleUrls: ['./login.css'],
 })
 export class Login {
   year = new Date().getFullYear();
-
   showPassword = false;
   loading = false;
   errorMsg = '';
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private http: HttpClient) {}
 
   onSubmit(form: NgForm): void {
     if (form.invalid) {
@@ -29,43 +28,22 @@ export class Login {
     this.loading = true;
     this.errorMsg = '';
 
-    // Simulate API call — replace with AuthService.login() later
-    setTimeout(() => {
-      const { username, password } = form.value;
-
-      // Mock validation against localStorage user
-      const stored = localStorage.getItem('tf_user');
-      if (stored) {
-        const user = JSON.parse(stored);
-        if (user.username === username) {
-          // In real app: validate hashed password via API
-          localStorage.setItem('tf_token', 'mock-token-' + user.id);
-          this.loading = false;
-          this.router.navigate(['/app/dashboard']);
-          return;
-        }
-      }
-
-      // Fallback: demo credentials
-      if (username === 'demo' && password === 'Demo@1234') {
-        const demoUser = {
-          id: 'demo-001',
-          username: 'demo',
-          email: 'demo@taskflow.app',
-          role: 'Manager',
-          joinedAt: new Date().toISOString(),
-          theme: 'dark',
-        };
-        localStorage.setItem('tf_user', JSON.stringify(demoUser));
-        localStorage.setItem('tf_token', 'mock-token-demo-001');
+    // Backend login API
+    this.http.post('http://localhost/VortaAppApis/auth/login.php', form.value).subscribe({
+      next: (res: any) => {
         this.loading = false;
-        this.router.navigate(['dashboard']);
-        return;
+        if (res.response) {
+          localStorage.setItem('user', JSON.stringify(res.user));
+          this.router.navigate(['/app/dashboard']);
+        } else {
+          this.errorMsg = res.message || 'Invalid username or password.';
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        this.errorMsg = 'Server error. Please try again later.';
+        console.error(err);
       }
-
-      // Credentials not found
-      this.loading = false;
-      this.errorMsg = 'Invalid username or password. Try demo / Demo@1234.';
-    }, 1600);
+    });
   }
 }

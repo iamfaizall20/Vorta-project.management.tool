@@ -1,1 +1,327 @@
-<p>settings works!</p>
+<div class="settings-page">
+
+    <!-- ── Topbar ─────────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar__left">
+            <nav class="breadcrumb">
+                <a class="breadcrumb__item" routerLink="/app">Vorta</a>
+                <span class="material-icons breadcrumb__sep">chevron_right</span>
+                <span class="breadcrumb__item breadcrumb__item--active">Settings</span>
+            </nav>
+        </div>
+        <div class="topbar__right">
+            <button class="btn-ghost btn-sm" (click)="onCancel()" *ngIf="isDirty">Discard</button>
+            <button class="btn-primary btn-sm" (click)="onSave()" [disabled]="saving" [class.btn--loading]="saving">
+                <span class="spinner" *ngIf="saving"></span>
+                <span class="material-icons" *ngIf="!saving">save</span>
+                {{ saving ? 'Saving…' : 'Save Changes' }}
+            </button>
+        </div>
+    </header>
+
+    <!-- ── Layout ─────────────────────────────────────────────── -->
+    <div class="settings-layout">
+
+        <!-- ── Left nav ───────────────────────────────────────────── -->
+        <nav class="settings-nav">
+            <div class="settings-nav__group">
+                <span class="settings-nav__group-label">Workspace</span>
+                <button class="nav-item" *ngFor="let tab of tabs" [class.nav-item--active]="activeTab === tab.id"
+                    [class.nav-item--danger]="tab.id === 'danger'" (click)="activeTab = tab.id">
+                    <div class="nav-item__icon" [class.nav-item__icon--danger]="tab.id === 'danger'">
+                        <span class="material-icons">{{ tab.icon }}</span>
+                    </div>
+                    <span class="nav-item__label">{{ tab.label }}</span>
+                    <span class="material-icons nav-item__arrow">chevron_right</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- ── Right content ──────────────────────────────────────── -->
+        <main class="settings-content" [class.settings-content--danger]="activeTab === 'danger'">
+
+            <!-- ── GENERAL ─────────────────────────────────────────── -->
+            <div class="tab-panel" *ngIf="activeTab === 'general'">
+                <div class="tab-head">
+                    <h2 class="tab-title">General</h2>
+                    <p class="tab-desc">Manage your workspace name, branding and basic details.</p>
+                </div>
+
+                <div class="settings-card">
+                    <h3 class="settings-card__title">Workspace Details</h3>
+                    <div class="form-stack">
+
+                        <div class="field">
+                            <label class="field__label">Workspace name</label>
+                            <div class="field__wrap">
+                                <span class="material-icons field__icon">business</span>
+                                <input type="text" class="field__input" [(ngModel)]="settings.workspaceName"
+                                    (ngModelChange)="onFieldChange()" placeholder="e.g. Vorta HQ" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Workspace URL slug</label>
+                            <div class="field__wrap field__wrap--prefix">
+                                <span class="field__prefix">vorta.io/</span>
+                                <input type="text" class="field__input field__input--with-prefix"
+                                    [(ngModel)]="settings.workspaceSlug" (ngModelChange)="onFieldChange()"
+                                    placeholder="your-workspace" />
+                            </div>
+                            <span class="field__hint">Only lowercase letters, numbers and hyphens.</span>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Workspace description</label>
+                            <textarea class="field__input field__textarea" [(ngModel)]="settings.workspaceDesc"
+                                (ngModelChange)="onFieldChange()" placeholder="What does your team work on?"
+                                rows="3"></textarea>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Industry</label>
+                            <div class="field__wrap field__wrap--sel">
+                                <span class="material-icons field__icon">domain</span>
+                                <select class="field__input field__select" [(ngModel)]="settings.industry"
+                                    (ngModelChange)="onFieldChange()">
+                                    <option value="tech">Technology / Software</option>
+                                    <option value="design">Design / Creative</option>
+                                    <option value="marketing">Marketing / Growth</option>
+                                    <option value="finance">Finance</option>
+                                    <option value="healthcare">Healthcare</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <span class="material-icons field__arr">expand_more</span>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Company size</label>
+                            <div class="field__wrap field__wrap--sel">
+                                <span class="material-icons field__icon">groups</span>
+                                <select class="field__input field__select" [(ngModel)]="settings.companySize"
+                                    (ngModelChange)="onFieldChange()">
+                                    <option value="1-10">1–10 people</option>
+                                    <option value="11-50">11–50 people</option>
+                                    <option value="51-200">51–200 people</option>
+                                    <option value="201+">201+ people</option>
+                                </select>
+                                <span class="material-icons field__arr">expand_more</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3 class="settings-card__title">Default Settings</h3>
+                    <div class="toggle-list">
+                        <div class="toggle-row" *ngFor="let t of generalToggles">
+                            <div class="toggle-row__info">
+                                <span class="toggle-row__label">{{ t.label }}</span>
+                                <span class="toggle-row__desc">{{ t.desc }}</span>
+                            </div>
+                            <button class="toggle-switch" [class.toggle-switch--on]="t.enabled"
+                                (click)="t.enabled = !t.enabled; onFieldChange()">
+                                <div class="toggle-thumb"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── APPEARANCE ──────────────────────────────────────── -->
+            <div class="tab-panel" *ngIf="activeTab === 'appearance'">
+                <div class="tab-head">
+                    <h2 class="tab-title">Appearance</h2>
+                    <p class="tab-desc">Customise how Vorta looks for you.</p>
+                </div>
+
+                <div class="settings-card">
+                    <h3 class="settings-card__title">Theme</h3>
+                    <div class="theme-options">
+                        <div class="theme-option" *ngFor="let t of themes"
+                            [class.theme-option--active]="settings.theme === t.value"
+                            (click)="settings.theme = t.value; onFieldChange()">
+                            <div class="theme-preview" [class]="'theme-preview--' + t.value">
+                                <div class="tp-sidebar"></div>
+                                <div class="tp-main">
+                                    <div class="tp-topbar"></div>
+                                    <div class="tp-content">
+                                        <div class="tp-card"></div>
+                                        <div class="tp-card"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="theme-option__info">
+                                <span class="theme-option__name">{{ t.label }}</span>
+                                <span class="material-icons theme-option__check"
+                                    *ngIf="settings.theme === t.value">check_circle</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3 class="settings-card__title">Accent Colour</h3>
+                    <p class="settings-card__desc">Used for buttons, active states and highlights.</p>
+                    <div class="accent-options">
+                        <button class="accent-swatch" *ngFor="let a of accentColors" [style.background]="a.color"
+                            [class.accent-swatch--active]="settings.accentColor === a.color" [title]="a.name"
+                            (click)="settings.accentColor = a.color; onFieldChange()">
+                            <span class="material-icons" *ngIf="settings.accentColor === a.color">check</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3 class="settings-card__title">Density</h3>
+                    <div class="density-options">
+                        <button class="density-btn" *ngFor="let d of densityOptions"
+                            [class.density-btn--active]="settings.density === d.value"
+                            (click)="settings.density = d.value; onFieldChange()">
+                            <span class="material-icons">{{ d.icon }}</span>
+                            <span>{{ d.label }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── NOTIFICATIONS ──────────────────────────────────── -->
+            <div class="tab-panel" *ngIf="activeTab === 'notifications'">
+                <div class="tab-head">
+                    <h2 class="tab-title">Notifications</h2>
+                    <p class="tab-desc">Control how and when Vorta notifies you.</p>
+                </div>
+
+                <div class="settings-card" *ngFor="let group of notifGroups">
+                    <h3 class="settings-card__title">{{ group.title }}</h3>
+                    <div class="toggle-list">
+                        <div class="toggle-row" *ngFor="let n of group.items">
+                            <div class="toggle-row__info">
+                                <span class="toggle-row__label">{{ n.label }}</span>
+                                <span class="toggle-row__desc">{{ n.desc }}</span>
+                            </div>
+                            <button class="toggle-switch" [class.toggle-switch--on]="n.enabled"
+                                (click)="n.enabled = !n.enabled; onFieldChange()">
+                                <div class="toggle-thumb"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── SECURITY ────────────────────────────────────────── -->
+            <div class="tab-panel" *ngIf="activeTab === 'security'">
+                <div class="tab-head">
+                    <h2 class="tab-title">Security</h2>
+                    <p class="tab-desc">Manage workspace access and security policies.</p>
+                </div>
+
+                <div class="settings-card">
+                    <h3 class="settings-card__title">Access Control</h3>
+                    <div class="toggle-list">
+                        <div class="toggle-row" *ngFor="let s of securityToggles">
+                            <div class="toggle-row__info">
+                                <span class="toggle-row__label">{{ s.label }}</span>
+                                <span class="toggle-row__desc">{{ s.desc }}</span>
+                            </div>
+                            <button class="toggle-switch" [class.toggle-switch--on]="s.enabled"
+                                (click)="s.enabled = !s.enabled; onFieldChange()">
+                                <div class="toggle-thumb"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3 class="settings-card__title">Session Policy</h3>
+                    <div class="form-stack">
+                        <div class="field">
+                            <label class="field__label">Session timeout</label>
+                            <div class="field__wrap field__wrap--sel">
+                                <span class="material-icons field__icon">schedule</span>
+                                <select class="field__input field__select" [(ngModel)]="settings.sessionTimeout"
+                                    (ngModelChange)="onFieldChange()">
+                                    <option value="30m">30 minutes</option>
+                                    <option value="1h">1 hour</option>
+                                    <option value="8h">8 hours</option>
+                                    <option value="24h">24 hours</option>
+                                    <option value="7d">7 days</option>
+                                    <option value="never">Never</option>
+                                </select>
+                                <span class="material-icons field__arr">expand_more</span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="field__label">Allowed login methods</label>
+                            <div class="check-group">
+                                <label class="check-item" *ngFor="let m of loginMethods">
+                                    <input type="checkbox" class="check-input" [(ngModel)]="m.enabled"
+                                        (ngModelChange)="onFieldChange()" />
+                                    <span class="check-box"></span>
+                                    <span class="check-label">{{ m.label }}</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3 class="settings-card__title">Active Sessions</h3>
+                    <div class="session-list">
+                        <div class="session-row" *ngFor="let s of activeSessions">
+                            <div class="session-icon">
+                                <span class="material-icons">{{ s.icon }}</span>
+                            </div>
+                            <div class="session-info">
+                                <span class="session-device">{{ s.device }}</span>
+                                <span class="session-meta">{{ s.location }} · {{ s.lastSeen }}</span>
+                            </div>
+                            <span class="session-current" *ngIf="s.isCurrent">Current</span>
+                            <button class="session-revoke" *ngIf="!s.isCurrent" (click)="revokeSession(s)">
+                                <span class="material-icons">logout</span>
+                                Revoke
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── DANGER ZONE ─────────────────────────────────────── -->
+            <div class="tab-panel tab-panel--danger" *ngIf="activeTab === 'danger'">
+                <div class="tab-head">
+                    <h2 class="tab-title tab-title--danger">
+                        <span class="material-icons">warning</span>
+                        Danger Zone
+                    </h2>
+                    <p class="tab-desc">These actions are destructive and cannot be undone.</p>
+                </div>
+
+                <div class="danger-card" *ngFor="let d of dangerActions">
+                    <div class="danger-card__info">
+                        <div class="danger-card__icon">
+                            <span class="material-icons">{{ d.icon }}</span>
+                        </div>
+                        <div>
+                            <h4 class="danger-card__title">{{ d.title }}</h4>
+                            <p class="danger-card__desc">{{ d.desc }}</p>
+                        </div>
+                    </div>
+                    <button class="btn-danger-solid" (click)="onDangerAction(d)">
+                        <span class="material-icons">{{ d.icon }}</span>
+                        {{ d.action }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Save success banner -->
+            <div class="save-banner" *ngIf="saveSuccess">
+                <span class="material-icons">check_circle</span>
+                Settings saved successfully!
+            </div>
+
+        </main>
+    </div>
+
+</div>

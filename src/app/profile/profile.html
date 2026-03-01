@@ -1,1 +1,317 @@
-<p>profile works!</p>
+<div class="profile-page">
+
+    <!-- ── Topbar ─────────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar__left">
+            <nav class="breadcrumb">
+                <a class="breadcrumb__item" routerLink="/app">Vorta</a>
+                <span class="material-icons breadcrumb__sep">chevron_right</span>
+                <span class="breadcrumb__item breadcrumb__item--active">Profile</span>
+            </nav>
+        </div>
+        <div class="topbar__right">
+            <button class="btn-ghost btn-sm" (click)="onCancel()" *ngIf="isDirty">Discard</button>
+            <button class="btn-primary btn-sm" (click)="onSave()" [disabled]="saving" [class.btn--loading]="saving">
+                <span class="spinner" *ngIf="saving"></span>
+                <span class="material-icons" *ngIf="!saving">save</span>
+                {{ saving ? 'Saving…' : 'Save Changes' }}
+            </button>
+        </div>
+    </header>
+
+    <!-- ── Main ───────────────────────────────────────────────── -->
+    <main class="profile-main">
+
+        <!-- ── LEFT: Identity ───────────────────────────────────── -->
+        <aside class="identity-col">
+
+            <div class="identity-card" [style.--user-color]="profile.color">
+                <div class="identity-card__bg" [style.background]="meshGradient"></div>
+
+                <!-- Avatar + colour picker -->
+                <div class="avatar-section">
+                    <div class="avatar-ring" [style.border-color]="profile.color + '55'">
+                        <div class="avatar" [style.background]="profile.color">{{ profile.initials }}</div>
+                        <div class="avatar-status"></div>
+                    </div>
+                    <div class="color-picker-wrap">
+                        <button class="color-pick-btn" (click)="showColorPicker = !showColorPicker">
+                            <span class="material-icons">palette</span>Colour
+                        </button>
+                        <div class="cpd" *ngIf="showColorPicker">
+                            <div class="cpd__swatches">
+                                <button class="cpd__swatch" *ngFor="let c of colorOptions" [style.background]="c"
+                                    [class.cpd__swatch--active]="profile.color === c" (click)="setColor(c)">
+                                    <span class="material-icons" *ngIf="profile.color === c">check</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Identity info -->
+                <div class="identity-info">
+                    <h2 class="identity-name">{{ profile.name || 'Your Name' }}</h2>
+                    <span class="identity-email">{{ profile.email }}</span>
+                    <div class="identity-badges">
+                        <span class="role-badge">{{ profile.role }}</span>
+                        <span class="joined-chip">
+                            <span class="material-icons">calendar_today</span>
+                            Joined {{ profile.joinedDate }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="identity-stats">
+                    <div class="id-stat">
+                        <span class="id-stat__val" [style.color]="profile.color">{{ profile.projectCount }}</span>
+                        <span class="id-stat__lbl">Projects</span>
+                    </div>
+                    <div class="id-stat-div"></div>
+                    <div class="id-stat">
+                        <span class="id-stat__val" [style.color]="profile.color">{{ profile.taskCount }}</span>
+                        <span class="id-stat__lbl">Tasks</span>
+                    </div>
+                    <div class="id-stat-div"></div>
+                    <div class="id-stat">
+                        <span class="id-stat__val" [style.color]="profile.color">{{ profile.teamCount }}</span>
+                        <span class="id-stat__lbl">Teams</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity -->
+            <div class="activity-card">
+                <h3 class="activity-card__title">Recent Activity</h3>
+                <div class="activity-list">
+                    <div class="activity-item" *ngFor="let a of recentActivity">
+                        <div class="activity-icon" [style.background]="a.iconBg" [style.color]="a.iconColor">
+                            <span class="material-icons">{{ a.icon }}</span>
+                        </div>
+                        <div class="activity-body">
+                            <span class="activity-text">{{ a.text }}</span>
+                            <span class="activity-time">{{ a.time }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- ── RIGHT: Edit sections ──────────────────────────────── -->
+        <div class="edit-col">
+
+            <!-- Personal Info -->
+            <section class="edit-section" [class.edit-section--open]="activeSection === 'personal'">
+                <div class="edit-section__head" (click)="toggleSection('personal')">
+                    <div class="section-head-left">
+                        <div class="section-icon si--indigo"><span class="material-icons">person</span></div>
+                        <div>
+                            <h3 class="edit-section__title">Personal Info</h3>
+                            <p class="edit-section__sub">Your name, email and contact details</p>
+                        </div>
+                    </div>
+                    <span class="material-icons section-chevron"
+                        [class.section-chevron--open]="activeSection === 'personal'">expand_more</span>
+                </div>
+
+                <div class="edit-section__body" *ngIf="activeSection === 'personal'">
+                    <div class="form-grid">
+
+                        <div class="field">
+                            <label class="field__label">First name</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">badge</span>
+                                <input type="text" class="field__input" placeholder="First name"
+                                    [(ngModel)]="profile.firstName" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Last name</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">badge</span>
+                                <input type="text" class="field__input" placeholder="Last name"
+                                    [(ngModel)]="profile.lastName" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field field--full">
+                            <label class="field__label">Email address</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">email</span>
+                                <input type="email" class="field__input" placeholder="you@company.com"
+                                    [(ngModel)]="profile.email" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field field--full">
+                            <label class="field__label">Job title</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">work</span>
+                                <input type="text" class="field__input" placeholder="e.g. Senior Engineer"
+                                    [(ngModel)]="profile.jobTitle" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field field--full">
+                            <label class="field__label">Bio</label>
+                            <textarea class="field__input field__textarea" placeholder="Tell your team about yourself…"
+                                [(ngModel)]="profile.bio" (ngModelChange)="onFieldChange()" rows="3"></textarea>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Timezone</label>
+                            <div class="field__wrap field__wrap--sel">
+                                <span class="material-icons field__icon">public</span>
+                                <select class="field__input field__select" [(ngModel)]="profile.timezone"
+                                    (ngModelChange)="onFieldChange()">
+                                    <option value="PKT">Pakistan (PKT, UTC+5)</option>
+                                    <option value="UTC">UTC</option>
+                                    <option value="EST">Eastern (EST, UTC-5)</option>
+                                    <option value="PST">Pacific (PST, UTC-8)</option>
+                                    <option value="GMT">London (GMT)</option>
+                                    <option value="IST">India (IST, UTC+5:30)</option>
+                                </select>
+                                <span class="material-icons field__arr">expand_more</span>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Language</label>
+                            <div class="field__wrap field__wrap--sel">
+                                <span class="material-icons field__icon">translate</span>
+                                <select class="field__input field__select" [(ngModel)]="profile.language"
+                                    (ngModelChange)="onFieldChange()">
+                                    <option value="en">English</option>
+                                    <option value="ur">Urdu</option>
+                                    <option value="ar">Arabic</option>
+                                    <option value="fr">French</option>
+                                </select>
+                                <span class="material-icons field__arr">expand_more</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Change Password -->
+            <section class="edit-section" [class.edit-section--open]="activeSection === 'password'">
+                <div class="edit-section__head" (click)="toggleSection('password')">
+                    <div class="section-head-left">
+                        <div class="section-icon si--amber"><span class="material-icons">lock</span></div>
+                        <div>
+                            <h3 class="edit-section__title">Change Password</h3>
+                            <p class="edit-section__sub">Update your login credentials</p>
+                        </div>
+                    </div>
+                    <span class="material-icons section-chevron"
+                        [class.section-chevron--open]="activeSection === 'password'">expand_more</span>
+                </div>
+
+                <div class="edit-section__body" *ngIf="activeSection === 'password'">
+                    <div class="form-grid">
+
+                        <div class="field field--full">
+                            <label class="field__label">Current password</label>
+                            <div class="field__wrap">
+                                <span class="material-icons field__icon">lock_outline</span>
+                                <input [type]="showCurrentPwd ? 'text' : 'password'"
+                                    class="field__input field__input--pwd" placeholder="Enter current password"
+                                    [(ngModel)]="passwords.current" />
+                                <button type="button" class="pwd-eye" (click)="showCurrentPwd = !showCurrentPwd">
+                                    <span class="material-icons">{{ showCurrentPwd ? 'visibility_off' : 'visibility'
+                                        }}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">New password</label>
+                            <div class="field__wrap">
+                                <span class="material-icons field__icon">lock</span>
+                                <input [type]="showNewPwd ? 'text' : 'password'" class="field__input field__input--pwd"
+                                    placeholder="Min. 8 characters" [(ngModel)]="passwords.new"
+                                    (ngModelChange)="checkPwdStrength()" />
+                                <button type="button" class="pwd-eye" (click)="showNewPwd = !showNewPwd">
+                                    <span class="material-icons">{{ showNewPwd ? 'visibility_off' : 'visibility'
+                                        }}</span>
+                                </button>
+                            </div>
+                            <div class="pwd-strength" *ngIf="passwords.new">
+                                <div class="pwd-strength__bar">
+                                    <div class="pwd-strength__fill" [style.width]="pwdStrength.pct + '%'"
+                                        [style.background]="pwdStrength.color"></div>
+                                </div>
+                                <span class="pwd-strength__label" [style.color]="pwdStrength.color">{{ pwdStrength.label
+                                    }}</span>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Confirm new password</label>
+                            <div class="field__wrap">
+                                <span class="material-icons field__icon">lock</span>
+                                <input [type]="showConfirmPwd ? 'text' : 'password'"
+                                    class="field__input field__input--pwd"
+                                    [class.field__input--error]="passwords.confirm && passwords.new !== passwords.confirm"
+                                    placeholder="Re-enter new password" [(ngModel)]="passwords.confirm" />
+                                <button type="button" class="pwd-eye" (click)="showConfirmPwd = !showConfirmPwd">
+                                    <span class="material-icons">{{ showConfirmPwd ? 'visibility_off' : 'visibility'
+                                        }}</span>
+                                </button>
+                            </div>
+                            <span class="field__msg"
+                                *ngIf="passwords.confirm && passwords.new !== passwords.confirm">Passwords do not
+                                match.</span>
+                        </div>
+
+                        <div class="field--full">
+                            <button class="btn-primary btn-sm"
+                                [disabled]="!passwords.current || !passwords.new || passwords.new !== passwords.confirm"
+                                (click)="onChangePassword()">
+                                <span class="material-icons">lock_reset</span>Update Password
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Notifications -->
+            <section class="edit-section" [class.edit-section--open]="activeSection === 'notifications'">
+                <div class="edit-section__head" (click)="toggleSection('notifications')">
+                    <div class="section-head-left">
+                        <div class="section-icon si--green"><span class="material-icons">notifications</span></div>
+                        <div>
+                            <h3 class="edit-section__title">Notifications</h3>
+                            <p class="edit-section__sub">Choose what alerts you receive</p>
+                        </div>
+                    </div>
+                    <span class="material-icons section-chevron"
+                        [class.section-chevron--open]="activeSection === 'notifications'">expand_more</span>
+                </div>
+
+                <div class="edit-section__body" *ngIf="activeSection === 'notifications'">
+                    <div class="toggle-list">
+                        <div class="toggle-row" *ngFor="let n of notifPrefs">
+                            <div class="toggle-row__info">
+                                <span class="toggle-row__label">{{ n.label }}</span>
+                                <span class="toggle-row__desc">{{ n.desc }}</span>
+                            </div>
+                            <button class="toggle-switch" [class.toggle-switch--on]="n.enabled"
+                                (click)="n.enabled = !n.enabled; onFieldChange()">
+                                <div class="toggle-thumb"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Save success banner -->
+            <div class="save-banner" *ngIf="saveSuccess">
+                <span class="material-icons">check_circle</span>
+                Profile saved successfully!
+            </div>
+
+        </div>
+    </main>
+</div>

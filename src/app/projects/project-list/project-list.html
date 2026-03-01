@@ -119,7 +119,7 @@
                     <div class="project-card__progress">
                         <div class="progress-row">
                             <span class="progress-label">{{ getProgress(p) }}% complete</span>
-                            <span class="progress-tasks">{{ getCompletedTasks(p) }}/{{ p.tasks?.length || 0 }}
+                            <span class="progress-tasks">{{ getCompletedTasks(p) }}/{{ p.tasks.length || 0 }}
                                 tasks</span>
                         </div>
                         <div class="progress-bar">
@@ -175,7 +175,7 @@
                     <div class="list-dot" [style.background]="p.color"></div>
                     <div class="list-project-info">
                         <span class="list-project-name">{{ p.name }}</span>
-                        <span class="list-project-desc">{{ p.description | slice:0:60 }}{{ (p.description?.length || 0)
+                        <span class="list-project-desc">{{ p.description | slice:0:60 }}{{ (p.description.length || 0)
                             > 60 ? '…' : '' }}</span>
                     </div>
                 </div>

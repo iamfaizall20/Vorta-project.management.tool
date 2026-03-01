@@ -1,5 +1,5 @@
 import { Component, OnInit, HostListener } from '@angular/core';
-import { CommonModule, TitleCasePipe, SlicePipe } from '@angular/common';
+import { TitleCasePipe, SlicePipe, CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Project } from '../project-detail/project-detail';

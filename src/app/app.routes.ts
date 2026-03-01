@@ -6,12 +6,12 @@ import { AppShell } from './app-shell/app-shell';
 import { Dashboard } from './dashboard/dashboard';
 import { ProjectList } from './projects/project-list/project-list';
 import { ProjectDetail } from './projects/project-detail/project-detail';
+import { CreateProject } from './projects/create-project/create-project';
 import { TaskList } from './tasks/task-list/task-list';
 import { TeamList } from './teams/team-list/team-list';
 import { Members } from './members/members';
 import { Profile } from './profile/profile';
 import { Settings } from './settings/settings';
-import { CreateProject } from './projects/create-project/create-project';
 
 export const routes: Routes = [
 
@@ -28,18 +28,26 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: Dashboard },
 
+      // Projects
       {
         path: 'projects',
         children: [
           { path: '', component: ProjectList },
-          { path: 'new', component: CreateProject },
-          { path: ':id', component: ProjectDetail }
+          { path: 'new', component: CreateProject },  // ← MUST be before :id
+          { path: ':id', component: ProjectDetail },
         ]
       },
 
+      // Tasks
       { path: 'tasks', component: TaskList },
+
+      // Teams — single page, drawers handle create/detail internally
       { path: 'teams', component: TeamList },
+
+      // Members
       { path: 'members', component: Members },
+
+      // Profile & Settings
       { path: 'profile', component: Profile },
       { path: 'settings', component: Settings },
     ]

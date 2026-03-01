@@ -1,1 +1,297 @@
-<p>team-list works!</p>
+<div class="teams-page">
+
+    <!-- ── Topbar ─────────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar__left">
+            <nav class="breadcrumb">
+                <a class="breadcrumb__item" routerLink="/app">Vorta</a>
+                <span class="material-icons breadcrumb__sep">chevron_right</span>
+                <span class="breadcrumb__item breadcrumb__item--active">Teams</span>
+            </nav>
+        </div>
+        <div class="topbar__right">
+            <button class="btn-primary" (click)="openCreateTeam()">
+                <span class="material-icons">add</span>
+                New Team
+            </button>
+        </div>
+    </header>
+
+    <!-- ── Main ───────────────────────────────────────────────── -->
+    <main class="teams-main">
+
+        <!-- Page head -->
+        <div class="page-head">
+            <div>
+                <h1 class="page-head__title">Teams</h1>
+                <p class="page-head__sub">{{ teams.length }} teams &nbsp;·&nbsp; {{ totalMembers }} members across all
+                    teams</p>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="search-box" [class.search-box--open]="searchFocused">
+                <span class="material-icons search-box__icon">search</span>
+                <input type="text" class="search-box__input" placeholder="Search teams…" [(ngModel)]="searchQuery"
+                    (focus)="searchFocused = true" (blur)="searchFocused = false" />
+                <span class="material-icons search-box__clear" *ngIf="searchQuery"
+                    (click)="searchQuery = ''">close</span>
+            </div>
+        </div>
+
+        <!-- Teams grid -->
+        <div class="teams-grid">
+
+            <!-- Create new team card -->
+            <div class="team-card team-card--new" (click)="openCreateTeam()">
+                <span class="material-icons team-card--new__icon">group_add</span>
+                <span class="team-card--new__label">Create Team</span>
+            </div>
+
+            <!-- Team cards -->
+            <div class="team-card" *ngFor="let t of filteredTeams; let i = index"
+                [style.animation-delay]="(i * 0.06) + 's'" [style.--team-color]="t.color" (click)="openTeamDetail(t)">
+
+                <div class="team-card__accent" [style.background]="t.color"></div>
+
+                <div class="team-card__body">
+                    <!-- Icon + name -->
+                    <div class="team-card__header">
+                        <div class="team-icon" [style.background]="t.color + '18'" [style.color]="t.color">
+                            <span class="material-icons">{{ t.icon }}</span>
+                        </div>
+                        <div class="team-card__info">
+                            <span class="team-card__name">{{ t.name }}</span>
+                            <span class="team-card__type">{{ t.type }}</span>
+                        </div>
+                        <button class="team-card__menu" (click)="$event.stopPropagation(); openTeamMenu(t, $event)">
+                            <span class="material-icons">more_vert</span>
+                        </button>
+                    </div>
+
+                    <!-- Description -->
+                    <p class="team-card__desc">{{ t.description || 'No description.' }}</p>
+
+                    <!-- Stats row -->
+                    <div class="team-card__stats">
+                        <div class="team-stat">
+                            <span class="material-icons team-stat__icon">folder_open</span>
+                            <span>{{ t.projectCount }} projects</span>
+                        </div>
+                        <div class="team-stat">
+                            <span class="material-icons team-stat__icon">task_alt</span>
+                            <span>{{ t.taskCount }} tasks</span>
+                        </div>
+                    </div>
+
+                    <!-- Members + lead -->
+                    <div class="team-card__footer">
+                        <div class="member-stack">
+                            <div class="member-avatar" *ngFor="let m of t.members.slice(0, 5)"
+                                [style.background]="m.color" [title]="m.name">
+                                {{ m.initials }}
+                            </div>
+                            <div class="member-avatar member-avatar--more" *ngIf="t.members.length > 5">
+                                +{{ t.members.length - 5 }}
+                            </div>
+                        </div>
+                        <div class="team-lead" *ngIf="t.lead" [title]="'Lead: ' + t.lead.name">
+                            <div class="team-lead__avatar" [style.background]="t.lead.color">{{ t.lead.initials }}</div>
+                            <span class="team-lead__label">Lead</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" *ngIf="filteredTeams.length === 0">
+            <span class="material-icons">group_off</span>
+            <h3>No teams found</h3>
+            <p>{{ searchQuery ? 'Try a different search term.' : 'Create your first team to get started.' }}</p>
+            <button class="btn-primary" (click)="openCreateTeam()">
+                <span class="material-icons">add</span>
+                Create Team
+            </button>
+        </div>
+
+    </main>
+
+    <!-- ── Team Detail Drawer ─────────────────────────────────── -->
+    <div class="drawer-backdrop" *ngIf="selectedTeam" (click)="selectedTeam = null"></div>
+    <div class="drawer" [class.drawer--open]="selectedTeam !== null">
+        <ng-container *ngIf="selectedTeam">
+            <div class="drawer__head" [style.border-top]="'3px solid ' + selectedTeam.color">
+                <div class="drawer__head-top">
+                    <div class="team-icon team-icon--lg" [style.background]="selectedTeam.color + '18'"
+                        [style.color]="selectedTeam.color">
+                        <span class="material-icons">{{ selectedTeam.icon }}</span>
+                    </div>
+                    <div class="drawer__head-info">
+                        <h2 class="drawer__title">{{ selectedTeam.name }}</h2>
+                        <span class="drawer__subtitle">{{ selectedTeam.type }}</span>
+                    </div>
+                    <button class="icon-btn" (click)="selectedTeam = null"><span
+                            class="material-icons">close</span></button>
+                </div>
+                <p class="drawer__desc">{{ selectedTeam.description }}</p>
+            </div>
+
+            <div class="drawer__body">
+                <!-- Members section -->
+                <div class="drawer-section">
+                    <div class="drawer-section__head">
+                        <span class="drawer-section__title">Members</span>
+                        <span class="drawer-section__count">{{ selectedTeam.members.length }}</span>
+                    </div>
+                    <div class="drawer-member-list">
+                        <div class="drawer-member" *ngFor="let m of selectedTeam.members">
+                            <div class="drawer-member__avatar" [style.background]="m.color">{{ m.initials }}</div>
+                            <div class="drawer-member__info">
+                                <span class="drawer-member__name">{{ m.name }}</span>
+                                <span class="drawer-member__role">{{ m.role }}</span>
+                            </div>
+                            <span class="lead-chip" *ngIf="selectedTeam.lead?.id === m.id">Lead</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="drawer-section">
+                    <div class="drawer-section__head">
+                        <span class="drawer-section__title">Overview</span>
+                    </div>
+                    <div class="drawer-stats-grid">
+                        <div class="drawer-stat">
+                            <span class="drawer-stat__value">{{ selectedTeam.members.length }}</span>
+                            <span class="drawer-stat__label">Members</span>
+                        </div>
+                        <div class="drawer-stat">
+                            <span class="drawer-stat__value">{{ selectedTeam.projectCount }}</span>
+                            <span class="drawer-stat__label">Projects</span>
+                        </div>
+                        <div class="drawer-stat">
+                            <span class="drawer-stat__value">{{ selectedTeam.taskCount }}</span>
+                            <span class="drawer-stat__label">Tasks</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="drawer-actions">
+                    <button class="btn-ghost btn-sm" (click)="onEditTeam(selectedTeam)">
+                        <span class="material-icons">edit</span> Edit Team
+                    </button>
+                    <button class="btn-danger btn-sm" (click)="onDeleteTeam(selectedTeam)">
+                        <span class="material-icons">delete_outline</span> Delete
+                    </button>
+                </div>
+            </div>
+        </ng-container>
+    </div>
+
+    <!-- ── Create Team Drawer ─────────────────────────────────── -->
+    <div class="drawer-backdrop" *ngIf="showCreateTeam" (click)="closeCreateTeam()"></div>
+    <div class="drawer drawer--create" [class.drawer--open]="showCreateTeam">
+        <div class="drawer__head">
+            <h2 class="drawer__title">New Team</h2>
+            <button class="icon-btn" (click)="closeCreateTeam()"><span class="material-icons">close</span></button>
+        </div>
+        <div class="drawer__body">
+            <form #teamForm="ngForm" (ngSubmit)="onCreateTeam(teamForm)" novalidate class="create-form">
+
+                <!-- Name -->
+                <div class="field" [class.field--error]="nameField.invalid && nameField.touched">
+                    <label class="field__label">Team name <span class="field__req">*</span></label>
+                    <input name="name" type="text" class="field__input" placeholder="e.g. Frontend Squad"
+                        [(ngModel)]="teamDraft.name" #nameField="ngModel" required minlength="2" />
+                    <span class="field__msg" *ngIf="nameField.touched && nameField.errors?.['required']">Name is
+                        required.</span>
+                </div>
+
+                <!-- Description -->
+                <div class="field">
+                    <label class="field__label">Description</label>
+                    <textarea name="description" class="field__input field__textarea"
+                        placeholder="What does this team work on?" [(ngModel)]="teamDraft.description"
+                        rows="3"></textarea>
+                </div>
+
+                <!-- Type -->
+                <div class="field">
+                    <label class="field__label">Team type</label>
+                    <div class="field__wrap field__wrap--select">
+                        <span class="material-icons field__icon">category</span>
+                        <select name="type" class="field__input field__select" [(ngModel)]="teamDraft.type">
+                            <option value="Engineering">Engineering</option>
+                            <option value="Design">Design</option>
+                            <option value="Product">Product</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Operations">Operations</option>
+                            <option value="QA">QA</option>
+                        </select>
+                        <span class="material-icons field__select-arrow">expand_more</span>
+                    </div>
+                </div>
+
+                <!-- Colour -->
+                <div class="field">
+                    <label class="field__label">Team colour</label>
+                    <div class="color-swatches">
+                        <button type="button" class="color-swatch" *ngFor="let c of colorOptions" [style.background]="c"
+                            [class.color-swatch--active]="teamDraft.color === c" (click)="teamDraft.color = c">
+                            <span class="material-icons" *ngIf="teamDraft.color === c">check</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Add members -->
+                <div class="field">
+                    <label class="field__label">Add members</label>
+                    <div class="member-picker">
+                        <div class="member-pick-item" *ngFor="let m of allMembers"
+                            [class.member-pick-item--sel]="isDraftMemberSelected(m)" (click)="toggleDraftMember(m)">
+                            <div class="mpi-avatar" [style.background]="m.color">{{ m.initials }}</div>
+                            <div class="mpi-info">
+                                <span class="mpi-name">{{ m.name }}</span>
+                                <span class="mpi-role">{{ m.role }}</span>
+                            </div>
+                            <span class="material-icons mpi-check">
+                                {{ isDraftMemberSelected(m) ? 'check_circle' : 'radio_button_unchecked' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-ghost btn-sm" (click)="closeCreateTeam()">Cancel</button>
+                    <button type="submit" class="btn-primary btn-sm" [disabled]="teamForm.invalid || creating"
+                        [class.btn-primary--loading]="creating">
+                        <span class="spinner" *ngIf="creating"></span>
+                        <span class="material-icons" *ngIf="!creating">add</span>
+                        {{ creating ? 'Creating…' : 'Create Team' }}
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Context menu backdrop -->
+    <div class="ctx-backdrop" *ngIf="menuTeam" (click)="menuTeam = null"></div>
+    <div class="ctx-menu" *ngIf="menuTeam" [style.top]="menuY + 'px'" [style.left]="menuX + 'px'">
+        <button class="ctx-item" (click)="openTeamDetail(menuTeam!); menuTeam = null">
+            <span class="material-icons">open_in_new</span> View
+        </button>
+        <button class="ctx-item" (click)="onEditTeam(menuTeam!); menuTeam = null">
+            <span class="material-icons">edit</span> Edit
+        </button>
+        <div class="ctx-divider"></div>
+        <button class="ctx-item ctx-item--danger" (click)="onDeleteTeam(menuTeam!); menuTeam = null">
+            <span class="material-icons">delete_outline</span> Delete
+        </button>
+    </div>
+
+</div>

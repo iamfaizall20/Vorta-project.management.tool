@@ -1,1 +1,458 @@
-<p>members works!</p>
+<div class="members-page">
+
+    <!-- ── Topbar ─────────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar__left">
+            <nav class="breadcrumb">
+                <a class="breadcrumb__item" routerLink="/app">Vorta</a>
+                <span class="material-icons breadcrumb__sep">chevron_right</span>
+                <span class="breadcrumb__item breadcrumb__item--active">Members</span>
+            </nav>
+        </div>
+        <div class="topbar__right">
+            <button class="btn-primary" (click)="openInvite()">
+                <span class="material-icons">person_add</span>
+                Invite Member
+            </button>
+        </div>
+    </header>
+
+    <!-- ── Main ───────────────────────────────────────────────── -->
+    <main class="members-main">
+
+        <!-- Page head -->
+        <div class="page-head">
+            <div>
+                <h1 class="page-head__title">Members</h1>
+                <p class="page-head__sub">
+                    {{ members.length }} members &nbsp;·&nbsp;
+                    {{ getCountByRole('Manager') }} managers &nbsp;·&nbsp;
+                    {{ getCountByRole('Member') }} members
+                </p>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <!-- Search -->
+            <div class="search-box" [class.search-box--open]="searchFocused">
+                <span class="material-icons search-box__icon">search</span>
+                <input type="text" class="search-box__input" placeholder="Search members…" [(ngModel)]="searchQuery"
+                    (focus)="searchFocused = true" (blur)="searchFocused = false" />
+                <span class="material-icons search-box__clear" *ngIf="searchQuery"
+                    (click)="searchQuery = ''">close</span>
+            </div>
+
+            <!-- Role filter -->
+            <div class="filter-pills">
+                <button class="filter-pill" *ngFor="let f of roleFilters"
+                    [class.filter-pill--active]="activeRole === f.value" (click)="activeRole = f.value">
+                    {{ f.label }}
+                    <span class="filter-pill__count">{{ getCountByRole(f.value) }}</span>
+                </button>
+            </div>
+
+            <!-- View toggle -->
+            <div class="view-toggle">
+                <button class="view-btn" [class.view-btn--active]="viewMode === 'grid'" (click)="viewMode = 'grid'"
+                    title="Grid">
+                    <span class="material-icons">grid_view</span>
+                </button>
+                <button class="view-btn" [class.view-btn--active]="viewMode === 'list'" (click)="viewMode = 'list'"
+                    title="List">
+                    <span class="material-icons">view_list</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ── GRID VIEW ─────────────────────────────────────────── -->
+        <div class="members-grid" *ngIf="viewMode === 'grid'">
+
+            <!-- Invite card -->
+            <div class="member-card member-card--invite" (click)="openInvite()">
+                <span class="material-icons member-card--invite__icon">person_add</span>
+                <span class="member-card--invite__label">Invite Member</span>
+            </div>
+
+            <!-- Member cards -->
+            <div class="member-card" *ngFor="let m of filteredMembers; let i = index" [style.--member-color]="m.color"
+                [style.animation-delay]="(i * 0.05) + 's'" (click)="openMemberDetail(m)">
+
+                <!-- Identity colour stripe -->
+                <div class="member-card__stripe" [style.background]="m.color"></div>
+
+                <div class="member-card__body">
+                    <!-- Avatar -->
+                    <div class="member-card__avatar-wrap">
+                        <div class="member-card__avatar" [style.background]="m.color">
+                            {{ m.initials }}
+                        </div>
+                        <div class="member-status-dot" [class.member-status-dot--online]="m.status === 'online'"
+                            [class.member-status-dot--away]="m.status === 'away'">
+                        </div>
+                    </div>
+
+                    <!-- Info -->
+                    <div class="member-card__info">
+                        <span class="member-card__name">{{ m.name }}</span>
+                        <span class="member-card__email">{{ m.email }}</span>
+                    </div>
+
+                    <!-- Role badge -->
+                    <span class="role-badge" [class]="'role-badge--' + m.role.toLowerCase()">
+                        {{ m.role }}
+                    </span>
+
+                    <!-- Stats -->
+                    <div class="member-card__stats">
+                        <div class="member-stat">
+                            <span class="material-icons member-stat__icon">folder_open</span>
+                            <span>{{ m.projectCount }} projects</span>
+                        </div>
+                        <div class="member-stat">
+                            <span class="material-icons member-stat__icon">task_alt</span>
+                            <span>{{ m.taskCount }} tasks</span>
+                        </div>
+                    </div>
+
+                    <!-- Teams chips -->
+                    <div class="member-teams" *ngIf="m.teams && m.teams.length > 0">
+                        <span class="team-chip" *ngFor="let t of m.teams.slice(0, 2)">{{ t }}</span>
+                        <span class="team-chip team-chip--more" *ngIf="m.teams.length > 2">+{{ m.teams.length - 2
+                            }}</span>
+                    </div>
+
+                    <!-- Hover quick actions -->
+                    <div class="member-card__actions">
+                        <button class="action-btn" (click)="$event.stopPropagation()" title="Message">
+                            <span class="material-icons">chat_bubble_outline</span>
+                        </button>
+                        <button class="action-btn" (click)="$event.stopPropagation(); openMemberDetail(m)"
+                            title="View profile">
+                            <span class="material-icons">open_in_new</span>
+                        </button>
+                        <button class="action-btn action-btn--danger" *ngIf="m.id !== currentUserId"
+                            (click)="$event.stopPropagation(); confirmRemove(m)" title="Remove member">
+                            <span class="material-icons">person_remove</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── LIST VIEW ─────────────────────────────────────────── -->
+        <div class="members-list-view" *ngIf="viewMode === 'list'">
+            <div class="list-header">
+                <span class="lh-col lh-col--name">Member</span>
+                <span class="lh-col">Role</span>
+                <span class="lh-col">Teams</span>
+                <span class="lh-col">Projects</span>
+                <span class="lh-col">Tasks</span>
+                <span class="lh-col">Status</span>
+                <span class="lh-col"></span>
+            </div>
+
+            <div class="list-member-row" *ngFor="let m of filteredMembers; let i = index"
+                [style.animation-delay]="(i * 0.04) + 's'" (click)="openMemberDetail(m)">
+
+                <!-- Avatar + name -->
+                <div class="lh-col lh-col--name">
+                    <div class="list-avatar-wrap">
+                        <div class="list-avatar" [style.background]="m.color">{{ m.initials }}</div>
+                        <div class="list-status-dot" [class.list-status-dot--online]="m.status === 'online'"
+                            [class.list-status-dot--away]="m.status === 'away'">
+                        </div>
+                    </div>
+                    <div class="list-member-info">
+                        <span class="list-member-name">{{ m.name }}</span>
+                        <span class="list-member-email">{{ m.email }}</span>
+                    </div>
+                </div>
+
+                <div class="lh-col">
+                    <span class="role-badge" [class]="'role-badge--' + m.role.toLowerCase()">{{ m.role }}</span>
+                </div>
+
+                <div class="lh-col list-teams-col">
+                    <span class="team-chip" *ngFor="let t of m.teams.slice(0, 2)">{{ t }}</span>
+                    <span class="team-chip team-chip--more" *ngIf="m.teams.length > 2">+{{ m.teams.length - 2 }}</span>
+                    <span class="list-empty-val" *ngIf="m.teams.length === 0">—</span>
+                </div>
+
+                <div class="lh-col list-num-col">{{ m.projectCount }}</div>
+                <div class="lh-col list-num-col">{{ m.taskCount }}</div>
+
+                <div class="lh-col">
+                    <span class="status-chip" [class]="'status-chip--' + m.status">{{ m.status | titlecase }}</span>
+                </div>
+
+                <div class="lh-col lh-col--actions" (click)="$event.stopPropagation()">
+                    <button class="icon-btn" (click)="openMemberDetail(m)" title="View">
+                        <span class="material-icons">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="list-empty" *ngIf="filteredMembers.length === 0">
+                <span class="material-icons">group_off</span>
+                <span>No members match your search</span>
+            </div>
+        </div>
+
+        <!-- Grid empty -->
+        <div class="grid-empty" *ngIf="viewMode === 'grid' && filteredMembers.length === 0">
+            <span class="material-icons">person_search</span>
+            <h3>No members found</h3>
+            <p>{{ searchQuery ? 'Try a different search term.' : 'Invite your first team member.' }}</p>
+            <button class="btn-primary" (click)="openInvite()">
+                <span class="material-icons">person_add</span>
+                Invite Member
+            </button>
+        </div>
+
+    </main>
+
+    <!-- ── Member Detail Drawer ────────────────────────────────── -->
+    <div class="drawer-backdrop" *ngIf="selectedMember" (click)="selectedMember = null"></div>
+    <div class="drawer" [class.drawer--open]="selectedMember !== null">
+        <ng-container *ngIf="selectedMember">
+
+            <!-- Coloured top bar -->
+            <div class="drawer__color-bar" [style.background]="selectedMember.color"></div>
+
+            <div class="drawer__head">
+                <div class="drawer__head-row">
+                    <div class="drawer-avatar" [style.background]="selectedMember.color">
+                        {{ selectedMember.initials }}
+                        <div class="drawer-status-dot"
+                            [class.drawer-status-dot--online]="selectedMember.status === 'online'"
+                            [class.drawer-status-dot--away]="selectedMember.status === 'away'">
+                        </div>
+                    </div>
+                    <div class="drawer__head-info">
+                        <h2 class="drawer__name">{{ selectedMember.name }}</h2>
+                        <span class="drawer__email">{{ selectedMember.email }}</span>
+                    </div>
+                    <button class="icon-btn" (click)="selectedMember = null">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+
+                <div class="drawer__badges">
+                    <span class="role-badge" [class]="'role-badge--' + selectedMember.role.toLowerCase()">
+                        {{ selectedMember.role }}
+                    </span>
+                    <span class="status-chip" [class]="'status-chip--' + selectedMember.status">
+                        {{ selectedMember.status | titlecase }}
+                    </span>
+                    <span class="joined-chip">
+                        <span class="material-icons">calendar_today</span>
+                        Joined {{ selectedMember.joinedDate }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="drawer__body">
+
+                <!-- Stats -->
+                <div class="drawer-stats-row">
+                    <div class="drawer-stat">
+                        <span class="drawer-stat__value" [style.color]="selectedMember.color">{{
+                            selectedMember.projectCount }}</span>
+                        <span class="drawer-stat__label">Projects</span>
+                    </div>
+                    <div class="drawer-stat">
+                        <span class="drawer-stat__value" [style.color]="selectedMember.color">{{
+                            selectedMember.taskCount }}</span>
+                        <span class="drawer-stat__label">Tasks</span>
+                    </div>
+                    <div class="drawer-stat">
+                        <span class="drawer-stat__value" [style.color]="selectedMember.color">{{
+                            selectedMember.teams.length }}</span>
+                        <span class="drawer-stat__label">Teams</span>
+                    </div>
+                </div>
+
+                <!-- Teams section -->
+                <div class="drawer-section" *ngIf="selectedMember.teams.length > 0">
+                    <span class="drawer-section__label">Teams</span>
+                    <div class="drawer-teams">
+                        <span class="team-chip team-chip--lg" *ngFor="let t of selectedMember.teams">{{ t }}</span>
+                    </div>
+                </div>
+
+                <!-- Recent tasks -->
+                <div class="drawer-section">
+                    <span class="drawer-section__label">Assigned Tasks</span>
+                    <div class="drawer-tasks">
+                        <div class="drawer-task" *ngFor="let t of getAssignedTasks(selectedMember.id)">
+                            <span class="drawer-task__status-dot" [class]="'task-dot--' + t.status"></span>
+                            <span class="drawer-task__name">{{ t.title }}</span>
+                            <span class="drawer-task__priority" [class]="'task-p--' + t.priority">{{ t.priority
+                                }}</span>
+                        </div>
+                        <div class="drawer-empty" *ngIf="getAssignedTasks(selectedMember.id).length === 0">
+                            <span class="material-icons">task_alt</span> No tasks assigned
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="drawer-actions">
+                    <button class="btn-ghost btn-sm" *ngIf="selectedMember.id !== currentUserId"
+                        (click)="onChangeRole(selectedMember)">
+                        <span class="material-icons">manage_accounts</span>
+                        Change Role
+                    </button>
+                    <button class="btn-danger btn-sm" *ngIf="selectedMember.id !== currentUserId"
+                        (click)="confirmRemove(selectedMember)">
+                        <span class="material-icons">person_remove</span>
+                        Remove
+                    </button>
+                </div>
+
+            </div>
+        </ng-container>
+    </div>
+
+    <!-- ── Invite Drawer ────────────────────────────────────────── -->
+    <div class="drawer-backdrop" *ngIf="showInvite" (click)="closeInvite()"></div>
+    <div class="drawer drawer--invite" [class.drawer--open]="showInvite">
+        <div class="drawer__head drawer__head--row">
+            <h2 class="drawer__title">Invite Member</h2>
+            <button class="icon-btn" (click)="closeInvite()">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+
+        <div class="drawer__body">
+            <form #inviteForm="ngForm" (ngSubmit)="onInvite(inviteForm)" novalidate class="invite-form">
+
+                <!-- Full name -->
+                <div class="field" [class.field--error]="nameField.invalid && nameField.touched">
+                    <label class="field__label">Full name <span class="field__req">*</span></label>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon">person</span>
+                        <input name="name" type="text" class="field__input" placeholder="e.g. Hassan Ali"
+                            [(ngModel)]="inviteDraft.name" #nameField="ngModel" required minlength="2" />
+                    </div>
+                    <span class="field__msg" *ngIf="nameField.touched && nameField.errors?.['required']">Name is
+                        required.</span>
+                </div>
+
+                <!-- Email -->
+                <div class="field" [class.field--error]="emailField.invalid && emailField.touched">
+                    <label class="field__label">Email address <span class="field__req">*</span></label>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon">email</span>
+                        <input name="email" type="email" class="field__input" placeholder="e.g. hassan@company.com"
+                            [(ngModel)]="inviteDraft.email" #emailField="ngModel" required email />
+                    </div>
+                    <span class="field__msg" *ngIf="emailField.touched && emailField.errors?.['required']">Email is
+                        required.</span>
+                    <span class="field__msg" *ngIf="emailField.touched && emailField.errors?.['email']">Enter a valid
+                        email.</span>
+                </div>
+
+                <!-- Role -->
+                <div class="field">
+                    <label class="field__label">Role</label>
+                    <div class="field__wrap field__wrap--select">
+                        <span class="material-icons field__icon">badge</span>
+                        <select name="role" class="field__input field__select" [(ngModel)]="inviteDraft.role">
+                            <option value="Member">Member</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Viewer">Viewer</option>
+                        </select>
+                        <span class="material-icons field__select-arrow">expand_more</span>
+                    </div>
+                </div>
+
+                <!-- Assign to teams -->
+                <div class="field">
+                    <label class="field__label">Assign to teams</label>
+                    <div class="teams-picker">
+                        <div class="team-pick-item" *ngFor="let t of availableTeams"
+                            [class.team-pick-item--sel]="isTeamSelected(t)" (click)="toggleTeam(t)">
+                            <div class="tpi-icon" [style.background]="t.color + '18'" [style.color]="t.color">
+                                <span class="material-icons">{{ t.icon }}</span>
+                            </div>
+                            <div class="tpi-info">
+                                <span class="tpi-name">{{ t.name }}</span>
+                                <span class="tpi-type">{{ t.type }}</span>
+                            </div>
+                            <span class="material-icons tpi-check">
+                                {{ isTeamSelected(t) ? 'check_circle' : 'radio_button_unchecked' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Avatar colour -->
+                <div class="field">
+                    <label class="field__label">Avatar colour</label>
+                    <div class="color-swatches">
+                        <button type="button" class="color-swatch" *ngFor="let c of colorOptions" [style.background]="c"
+                            [class.color-swatch--active]="inviteDraft.color === c" (click)="inviteDraft.color = c">
+                            <span class="material-icons" *ngIf="inviteDraft.color === c">check</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Preview -->
+                <div class="invite-preview" *ngIf="inviteDraft.name">
+                    <div class="invite-preview__avatar" [style.background]="inviteDraft.color">
+                        {{ getInitials(inviteDraft.name) }}
+                    </div>
+                    <div class="invite-preview__info">
+                        <span class="invite-preview__name">{{ inviteDraft.name }}</span>
+                        <span class="invite-preview__email">{{ inviteDraft.email || 'No email yet' }}</span>
+                    </div>
+                    <span class="role-badge" [class]="'role-badge--' + inviteDraft.role.toLowerCase()">
+                        {{ inviteDraft.role }}
+                    </span>
+                </div>
+
+                <!-- Success banner -->
+                <div class="success-banner" *ngIf="inviteSuccess">
+                    <span class="material-icons">check_circle</span>
+                    Invitation sent to {{ lastInvitedName }}!
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-ghost btn-sm" (click)="closeInvite()">Cancel</button>
+                    <button type="submit" class="btn-primary btn-sm" [disabled]="inviteForm.invalid || inviting"
+                        [class.btn-primary--loading]="inviting">
+                        <span class="spinner" *ngIf="inviting"></span>
+                        <span class="material-icons" *ngIf="!inviting">send</span>
+                        {{ inviting ? 'Sending…' : 'Send Invite' }}
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Remove confirm modal ─────────────────────────────────── -->
+    <div class="modal-backdrop" *ngIf="memberToRemove" (click)="memberToRemove = null">
+        <div class="confirm-modal" (click)="$event.stopPropagation()">
+            <div class="confirm-modal__icon">
+                <span class="material-icons">person_remove</span>
+            </div>
+            <h3 class="confirm-modal__title">Remove member?</h3>
+            <p class="confirm-modal__msg">
+                <strong>{{ memberToRemove.name }}</strong> will lose access to all projects and tasks in this
+                workspace.
+            </p>
+            <div class="confirm-modal__actions">
+                <button class="btn-ghost" (click)="memberToRemove = null">Cancel</button>
+                <button class="btn-danger" (click)="removeMember()">
+                    <span class="material-icons">person_remove</span>
+                    Remove
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>

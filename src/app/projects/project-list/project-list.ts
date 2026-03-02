@@ -3,11 +3,13 @@ import { TitleCasePipe, SlicePipe, CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Project } from '../project-detail/project-detail';
+import { HttpClientModule } from '@angular/common/http';
+import { ProjectsService } from '../../services/projects-service';
 
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TitleCasePipe, SlicePipe],
+  imports: [CommonModule, FormsModule, RouterLink, TitleCasePipe, SlicePipe, HttpClientModule],
   templateUrl: './project-list.html',
   styleUrls: ['./project-list.css'],
 })
@@ -20,6 +22,7 @@ export class ProjectList implements OnInit {
   activeFilter = 'all';
   viewMode: 'grid' | 'list' = 'grid';
   sortBy: 'name' | 'status' | 'progress' | 'dueDate' = 'name';
+  isLoading = true; // Added loading state
 
   // ── Context menu ───────────────────────────────────────────
   menuProject: Project | null = null;
@@ -35,115 +38,45 @@ export class ProjectList implements OnInit {
     { label: 'Completed', value: 'completed', color: '#5B5BD6' },
   ];
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private projectService: ProjectsService) { }
 
   ngOnInit(): void {
     this.loadProjects();
   }
 
-  // ── Load from localStorage + merge with mock data ──────────
+  // ── Load from API via Service ──────────────────────────────
   loadProjects(): void {
-    const stored: Project[] = JSON.parse(localStorage.getItem('vorta_projects') || '[]');
-
-    // If no projects yet in localStorage, seed with mock data
-    if (stored.length === 0) {
-      this.projects = this.getMockProjects();
-      localStorage.setItem('vorta_projects', JSON.stringify(this.projects));
-    } else {
-      this.projects = stored;
-    }
+    this.isLoading = true;
+    this.projectService.projectDetails().subscribe({
+      next: (data: any[]) => {
+        // Map API data to match the UI expectations (adding initials etc.)
+        this.projects = data.map(project => ({
+          ...project,
+          members: project.members.map((m: any) => ({
+            ...m,
+            initials: this.getInitials(m.name),
+            // Default color if avatar/color is missing from API
+            color: m.avatar || '#5B5BD6'
+          }))
+        }));
+        console.log(this.projects);
+        this.isLoading = false;
+        // Optionally cache to localStorage if you still want offline fallback
+        localStorage.setItem('vorta_projects', JSON.stringify(this.projects));
+      },
+      error: (err) => {
+        console.error('Error fetching projects:', err);
+        this.isLoading = false;
+        // Fallback to local storage if API fails
+        const stored = localStorage.getItem('vorta_projects');
+        if (stored) this.projects = JSON.parse(stored);
+      }
+    });
   }
 
-  getMockProjects(): Project[] {
-    return [
-      {
-        id: 'p1', name: 'Backend API v2',
-        description: 'REST API refactor with new auth layer and rate limiting.',
-        status: 'active', color: '#5B5BD6', priority: 'high',
-        dueDate: '2025-03-15', createdAt: new Date().toISOString(),
-        members: [
-          { id: 'u1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
-          { id: 'u2', name: 'Ali Raza', initials: 'AR', color: '#E54D2E', role: 'Member' },
-          { id: 'u3', name: 'Sara Zeb', initials: 'SZ', color: '#30A46C', role: 'Member' },
-        ],
-        tasks: [
-          { id: 't1', projectId: 'p1', title: 'Design auth endpoints', description: '', assignee: null, priority: 'high', status: 'done', dueDate: '', createdAt: '' },
-          { id: 't2', projectId: 'p1', title: 'Rate limiting', description: '', assignee: null, priority: 'high', status: 'inprogress', dueDate: '', createdAt: '' },
-          { id: 't3', projectId: 'p1', title: 'Write docs', description: '', assignee: null, priority: 'medium', status: 'todo', dueDate: '', createdAt: '' },
-        ],
-      },
-      {
-        id: 'p2', name: 'Mobile App Redesign',
-        description: 'Full UI overhaul for iOS and Android with new design system.',
-        status: 'active', color: '#E54D2E', priority: 'medium',
-        dueDate: '2025-04-01', createdAt: new Date().toISOString(),
-        members: [
-          { id: 'u3', name: 'Sara Zeb', initials: 'SZ', color: '#30A46C', role: 'Member' },
-          { id: 'u4', name: 'Omar Farooq', initials: 'OF', color: '#F59E0B', role: 'Member' },
-          { id: 'u5', name: 'Aisha Malik', initials: 'AM', color: '#EC4899', role: 'Member' },
-          { id: 'u6', name: 'Bilal Khan', initials: 'BK', color: '#7C7CE8', role: 'Member' },
-          { id: 'u7', name: 'Nadia H.', initials: 'NH', color: '#0EA5E9', role: 'Member' },
-        ],
-        tasks: [
-          { id: 't4', projectId: 'p2', title: 'Wireframes', description: '', assignee: null, priority: 'high', status: 'done', dueDate: '', createdAt: '' },
-          { id: 't5', projectId: 'p2', title: 'Components', description: '', assignee: null, priority: 'medium', status: 'inprogress', dueDate: '', createdAt: '' },
-          { id: 't6', projectId: 'p2', title: 'Testing', description: '', assignee: null, priority: 'low', status: 'todo', dueDate: '', createdAt: '' },
-        ],
-      },
-      {
-        id: 'p3', name: 'Auth & Onboarding',
-        description: 'Signup, login, email verification and onboarding flow.',
-        status: 'completed', color: '#30A46C', priority: 'high',
-        dueDate: '2025-02-01', createdAt: new Date().toISOString(),
-        members: [
-          { id: 'u1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
-          { id: 'u2', name: 'Ali Raza', initials: 'AR', color: '#E54D2E', role: 'Member' },
-        ],
-        tasks: [
-          { id: 't7', projectId: 'p3', title: 'Login page', description: '', assignee: null, priority: 'high', status: 'done', dueDate: '', createdAt: '' },
-          { id: 't8', projectId: 'p3', title: 'Signup flow', description: '', assignee: null, priority: 'high', status: 'done', dueDate: '', createdAt: '' },
-          { id: 't9', projectId: 'p3', title: 'Email verify', description: '', assignee: null, priority: 'high', status: 'done', dueDate: '', createdAt: '' },
-        ],
-      },
-      {
-        id: 'p4', name: 'Design System',
-        description: 'Component library, tokens and documentation for Vorta UI.',
-        status: 'hold', color: '#F59E0B', priority: 'low',
-        dueDate: '2025-05-10', createdAt: new Date().toISOString(),
-        members: [
-          { id: 'u3', name: 'Sara Zeb', initials: 'SZ', color: '#30A46C', role: 'Member' },
-          { id: 'u5', name: 'Aisha Malik', initials: 'AM', color: '#EC4899', role: 'Member' },
-        ],
-        tasks: [
-          { id: 't10', projectId: 'p4', title: 'Token setup', description: '', assignee: null, priority: 'medium', status: 'done', dueDate: '', createdAt: '' },
-          { id: 't11', projectId: 'p4', title: 'Button variants', description: '', assignee: null, priority: 'low', status: 'todo', dueDate: '', createdAt: '' },
-        ],
-      },
-      {
-        id: 'p5', name: 'Analytics Dashboard',
-        description: 'Usage metrics, funnel analysis and reporting for the product team.',
-        status: 'new', color: '#7C7CE8', priority: 'medium',
-        dueDate: '2025-06-01', createdAt: new Date().toISOString(),
-        members: [
-          { id: 'u4', name: 'Omar Farooq', initials: 'OF', color: '#F59E0B', role: 'Member' },
-        ],
-        tasks: [],
-      },
-      {
-        id: 'p6', name: 'Notification System',
-        description: 'In-app and email notification engine with user preferences.',
-        status: 'active', color: '#EC4899', priority: 'medium',
-        dueDate: '2025-03-28', createdAt: new Date().toISOString(),
-        members: [
-          { id: 'u6', name: 'Bilal Khan', initials: 'BK', color: '#7C7CE8', role: 'Member' },
-          { id: 'u7', name: 'Nadia H.', initials: 'NH', color: '#0EA5E9', role: 'Member' },
-        ],
-        tasks: [
-          { id: 't12', projectId: 'p6', title: 'Email templates', description: '', assignee: null, priority: 'high', status: 'done', dueDate: '', createdAt: '' },
-          { id: 't13', projectId: 'p6', title: 'Push service', description: '', assignee: null, priority: 'medium', status: 'inprogress', dueDate: '', createdAt: '' },
-        ],
-      },
-    ];
+  // Helper to generate initials from name for the UI avatars
+  private getInitials(name: string): string {
+    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : '??';
   }
 
   // ── Computed ───────────────────────────────────────────────
@@ -163,12 +96,10 @@ export class ProjectList implements OnInit {
   get filteredProjects(): Project[] {
     let list = [...this.projects];
 
-    // Filter by status
     if (this.activeFilter !== 'all') {
       list = list.filter(p => p.status === this.activeFilter);
     }
 
-    // Search
     const q = this.searchQuery.toLowerCase().trim();
     if (q) {
       list = list.filter(p =>
@@ -177,7 +108,6 @@ export class ProjectList implements OnInit {
       );
     }
 
-    // Sort
     list.sort((a, b) => {
       switch (this.sortBy) {
         case 'name': return a.name.localeCompare(b.name);
@@ -194,17 +124,19 @@ export class ProjectList implements OnInit {
   // ── Helpers ────────────────────────────────────────────────
   getProgress(p: Project): number {
     if (!p.tasks || p.tasks.length === 0) return 0;
-    const done = p.tasks.filter(t => t.status === 'done').length;
+    // The API tasks are simplified; we check if status exists or just count total
+    // Assuming status logic remains same as mock for now
+    const done = p.tasks.filter((t: any) => t.status === 'done').length;
     return Math.round((done / p.tasks.length) * 100);
   }
 
   getCompletedTasks(p: Project): number {
-    return (p.tasks || []).filter(t => t.status === 'done').length;
+    return (p.tasks || []).filter((t: any) => t.status === 'done').length;
   }
 
   getPriorityIcon(priority: string): string {
     const map: Record<string, string> = {
-      low: 'south', medium: 'remove', high: 'north', critical: 'priority_high'
+      low: 'south', medium: 'remove', mid: 'remove', high: 'north', critical: 'priority_high'
     };
     return map[priority] ?? 'remove';
   }
@@ -234,7 +166,7 @@ export class ProjectList implements OnInit {
     this.searchQuery = '';
   }
 
-  openProject(id: string): void {
+  openProject(id: string | number): void {
     this.router.navigate(['/app/projects', id]);
   }
 
@@ -248,8 +180,8 @@ export class ProjectList implements OnInit {
 
   onDeleteProject(p: Project): void {
     if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+    // In a real app, you would call projectService.delete(p.id).subscribe(...)
     this.projects = this.projects.filter(proj => proj.id !== p.id);
-    localStorage.setItem('vorta_projects', JSON.stringify(this.projects));
   }
 
   // ── Context menu ───────────────────────────────────────────

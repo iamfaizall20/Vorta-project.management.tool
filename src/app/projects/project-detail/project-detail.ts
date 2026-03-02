@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ProjectsService } from '../../services/projects-service';
 
 // ── Interfaces ────────────────────────────────────────────────
 export interface Member {
@@ -65,6 +66,7 @@ interface ActivityItem {
 export class ProjectDetail implements OnInit {
 
   project: Project | null = null;
+  isLoading = true;
   boardView: 'kanban' | 'list' = 'kanban';
   confirmDelete = false;
   showCreateTask = false;
@@ -106,93 +108,65 @@ export class ProjectDetail implements OnInit {
     { value: 'critical', label: 'Critical', icon: 'priority_high' },
   ];
 
-  // ── Mock activity feed ─────────────────────────────────────
   activity: ActivityItem[] = [];
 
-  constructor(private route: ActivatedRoute, private router: Router) { }
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private projectService: ProjectsService
+  ) { }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    console.log('Route ID:', id);
-
-    const stored = JSON.parse(localStorage.getItem('vorta_projects') || '[]');
-    console.log('All projects:', stored);
-
-    this.loadProject(id!);
-  }
-
-  // ── Load project ───────────────────────────────────────────
-  // Replace with ProjectService.getById(id) later
-  loadProject(id: string): void {
-    // First check localStorage (projects created via CreateProject)
-    const stored = JSON.parse(localStorage.getItem('vorta_projects') || '[]') as Project[];
-    let found = stored.find(p => p.id === id);
-
-    // Fallback mock data for dev/demo
-    if (!found) {
-      found = this.getMockProject(id);
-    }
-
-    if (found) {
-      // Ensure tasks array exists
-      if (!found.tasks) found.tasks = [];
-      this.project = found;
-      this.buildActivity();
+    if (id) {
+      this.fetchProjectData(id);
     }
   }
 
-  getMockProject(id: string): Project {
-    return {
-      id,
-      name: 'Backend API v2',
-      description: 'REST API refactor with new auth layer, rate limiting and improved error handling across all endpoints.',
-      status: 'active',
-      color: '#5B5BD6',
-      priority: 'high',
-      dueDate: '2025-03-15',
-      createdAt: new Date().toISOString(),
-      members: [
-        { id: 'u1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
-        { id: 'u2', name: 'Ali Raza', initials: 'AR', color: '#E54D2E', role: 'Member' },
-        { id: 'u3', name: 'Sara Zeb', initials: 'SZ', color: '#30A46C', role: 'Member' },
-        { id: 'u4', name: 'Omar Farooq', initials: 'OF', color: '#F59E0B', role: 'Member' },
-      ],
-      tasks: [
-        {
-          id: 't1', projectId: id, title: 'Design auth endpoints', description: 'Define POST /auth/login, /auth/signup, /auth/refresh',
-          assignee: { id: 'u2', name: 'Ali Raza', initials: 'AR', color: '#E54D2E', role: 'Member' },
-          priority: 'high', status: 'done', dueDate: '2025-02-20', createdAt: new Date().toISOString(),
-        },
-        {
-          id: 't2', projectId: id, title: 'Implement rate limiting', description: 'Use express-rate-limit with Redis store',
-          assignee: { id: 'u3', name: 'Sara Zeb', initials: 'SZ', color: '#30A46C', role: 'Member' },
-          priority: 'high', status: 'inprogress', dueDate: '2025-03-01', createdAt: new Date().toISOString(),
-        },
-        {
-          id: 't3', projectId: id, title: 'Write API documentation', description: 'Swagger/OpenAPI spec for all endpoints',
-          assignee: { id: 'u4', name: 'Omar Farooq', initials: 'OF', color: '#F59E0B', role: 'Member' },
-          priority: 'medium', status: 'todo', dueDate: '2025-03-10', createdAt: new Date().toISOString(),
-        },
-        {
-          id: 't4', projectId: id, title: 'Set up CI/CD pipeline', description: '',
-          assignee: { id: 'u1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
-          priority: 'medium', status: 'todo', dueDate: '2025-03-05', createdAt: new Date().toISOString(),
-        },
-        {
-          id: 't5', projectId: id, title: 'Fix CORS headers on staging', description: 'Preflight requests failing on /api/v2',
-          assignee: { id: 'u2', name: 'Ali Raza', initials: 'AR', color: '#E54D2E', role: 'Member' },
-          priority: 'critical', status: 'blocked', dueDate: '2025-02-25', createdAt: new Date().toISOString(),
-        },
-      ],
-    };
+  // ── Data Fetching ──────────────────────────────────────────
+  fetchProjectData(id: string): void {
+    this.isLoading = true;
+    this.projectService.projectDetails(id).subscribe({
+      next: (data) => {
+        // Map API Task structure to Component Task Interface
+        const mappedTasks = data.tasks.map((t: any) => ({
+          ...t,
+          assignee: t.assignee_id ? {
+            id: t.assignee_id,
+            name: t.assignee_name,
+            initials: this.getInitials(t.assignee_name),
+            color: t.assignee_avatar || '#5B5BD6'
+          } : null
+        }));
+
+        this.project = {
+          ...data,
+          tasks: mappedTasks,
+          members: data.members.map((m: any) => ({
+            ...m,
+            initials: this.getInitials(m.name),
+            color: m.avatar || '#5B5BD6'
+          }))
+        };
+
+        this.buildActivity();
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('API Error:', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private getInitials(name: string): string {
+    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : '??';
   }
 
   buildActivity(): void {
     if (!this.project) return;
     this.activity = [
-      { initials: 'AR', color: '#E54D2E', actor: 'Ali Raza', action: 'marked done', target: 'Design auth endpoints', time: '2h ago' },
-      { initials: 'SZ', color: '#30A46C', actor: 'Sara Zeb', action: 'started work on', target: 'Implement rate limiting', time: '5h ago' },
-      { initials: 'FH', color: '#5B5BD6', actor: 'Faizal Hassan', action: 'created task', target: 'Set up CI/CD pipeline', time: '1d ago' },
+      { initials: 'SYS', color: '#5B5BD6', actor: 'System', action: 'loaded project', target: this.project.name, time: 'Just now' }
     ];
   }
 
@@ -202,7 +176,7 @@ export class ProjectDetail implements OnInit {
   }
 
   getProgress(): number {
-    if (!this.project || this.project.tasks.length === 0) return 0;
+    if (!this.project || !this.project.tasks || this.project.tasks.length === 0) return 0;
     return Math.round((this.completedCount / this.project.tasks.length) * 100);
   }
 
@@ -245,7 +219,7 @@ export class ProjectDetail implements OnInit {
     return !!dateStr && new Date(dateStr) < new Date();
   }
 
-  // ── Task CRUD ──────────────────────────────────────────────
+  // ── Task CRUD (Local UI State) ─────────────────────────────
   openCreateTask(defaultStatus: string = 'todo'): void {
     this.taskDraft = { title: '', description: '', assigneeId: '', priority: 'medium', status: defaultStatus as any, dueDate: '' };
     this.showCreateTask = true;
@@ -260,6 +234,7 @@ export class ProjectDetail implements OnInit {
     if (form.invalid || !this.project) return;
     this.taskCreating = true;
 
+    // Simulate API delay - Replace with actual API call in the future
     setTimeout(() => {
       const assignee = this.project!.members.find(m => m.id === this.taskDraft.assigneeId) ?? null;
       const newTask: Task = {
@@ -269,16 +244,14 @@ export class ProjectDetail implements OnInit {
         description: this.taskDraft.description.trim(),
         assignee,
         priority: this.taskDraft.priority,
-        status: this.taskDraft.status,
+        status: 'todo',
         dueDate: this.taskDraft.dueDate,
         createdAt: new Date().toISOString(),
       };
 
       this.project!.tasks = [...this.project!.tasks, newTask];
-      this.saveProject();
       this.updateProjectStatus();
 
-      // Add to activity
       this.activity.unshift({
         initials: 'FH', color: '#5B5BD6', actor: 'You',
         action: 'created task', target: newTask.title, time: 'Just now',
@@ -295,7 +268,6 @@ export class ProjectDetail implements OnInit {
     if (this.selectedTask?.id === task.id) {
       this.selectedTask = { ...task };
     }
-    this.saveProject();
     this.updateProjectStatus();
 
     this.activity.unshift({
@@ -313,7 +285,6 @@ export class ProjectDetail implements OnInit {
     if (!this.project) return;
     this.project.tasks = this.project.tasks.filter(t => t.id !== task.id);
     this.selectedTask = null;
-    this.saveProject();
     this.updateProjectStatus();
   }
 
@@ -327,7 +298,6 @@ export class ProjectDetail implements OnInit {
   }
 
   onEditTask(task: Task): void {
-    // TODO: populate taskDraft and open create drawer in edit mode
     this.selectedTask = null;
     this.openCreateTask(task.status);
     this.taskDraft.title = task.title;
@@ -337,7 +307,6 @@ export class ProjectDetail implements OnInit {
     this.taskDraft.dueDate = task.dueDate;
   }
 
-  // ── Auto-update project status based on tasks ──────────────
   updateProjectStatus(): void {
     if (!this.project || this.project.tasks.length === 0) return;
     const pct = this.getProgress();
@@ -346,19 +315,6 @@ export class ProjectDetail implements OnInit {
     } else if (pct > 0 && this.project.status === 'new') {
       this.project.status = 'active';
     }
-  }
-
-  // ── Persist to localStorage ────────────────────────────────
-  saveProject(): void {
-    if (!this.project) return;
-    const all = JSON.parse(localStorage.getItem('vorta_projects') || '[]') as Project[];
-    const idx = all.findIndex(p => p.id === this.project!.id);
-    if (idx !== -1) {
-      all[idx] = this.project;
-    } else {
-      all.push(this.project);
-    }
-    localStorage.setItem('vorta_projects', JSON.stringify(all));
   }
 
   // ── Navigation ─────────────────────────────────────────────
@@ -371,10 +327,7 @@ export class ProjectDetail implements OnInit {
   }
 
   onDeleteProject(): void {
-    if (!this.project) return;
-    const all = JSON.parse(localStorage.getItem('vorta_projects') || '[]') as Project[];
-    const updated = all.filter(p => p.id !== this.project!.id);
-    localStorage.setItem('vorta_projects', JSON.stringify(updated));
+    // Implement API call for deletion here
     this.router.navigate(['/app/projects']);
   }
 }

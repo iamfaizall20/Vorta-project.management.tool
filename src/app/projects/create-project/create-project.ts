@@ -1,9 +1,10 @@
-
 // ========
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { ProjectsService } from '../../services/projects-service';
+import { UserService } from '../../services/user-service';
 
 interface Member {
   id: string;
@@ -49,16 +50,16 @@ export class CreateProject implements OnInit {
 
   // ── Color palette ──────────────────────────────────────────
   colorOptions = [
-    '#5B5BD6', // Indigo (default)
-    '#E54D2E', // Red
-    '#30A46C', // Green
-    '#F59E0B', // Amber
-    '#EC4899', // Pink
-    '#7C7CE8', // Lavender
-    '#0EA5E9', // Sky
-    '#8B5CF6', // Violet
-    '#14B8A6', // Teal
-    '#F97316', // Orange
+    '#5B5BD6',
+    '#E54D2E',
+    '#30A46C',
+    '#F59E0B',
+    '#EC4899',
+    '#7C7CE8',
+    '#0EA5E9',
+    '#8B5CF6',
+    '#14B8A6',
+    '#F97316',
   ];
 
   // ── Priority options ───────────────────────────────────────
@@ -69,24 +70,50 @@ export class CreateProject implements OnInit {
     { value: 'critical' as const, label: 'Critical', icon: 'priority_high' },
   ];
 
-  // ── Mock registered users (replace with UserService later) ─
-  allMembers: Member[] = [
-    { id: 'u1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
-    { id: 'u2', name: 'Ali Raza', initials: 'AR', color: '#E54D2E', role: 'Member' },
-    { id: 'u3', name: 'Sara Zeb', initials: 'SZ', color: '#30A46C', role: 'Member' },
-    { id: 'u4', name: 'Omar Farooq', initials: 'OF', color: '#F59E0B', role: 'Member' },
-    { id: 'u5', name: 'Aisha Malik', initials: 'AM', color: '#EC4899', role: 'Member' },
-    { id: 'u6', name: 'Bilal Khan', initials: 'BK', color: '#7C7CE8', role: 'Member' },
-    { id: 'u7', name: 'Nadia Hussain', initials: 'NH', color: '#0EA5E9', role: 'Member' },
-  ];
-
+  // ── Members (now from API) ─────────────────────────────────
+  allMembers: Member[] = [];
   filteredAvailableMembers: Member[] = [];
   selectedMembers: Member[] = [];
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private projectService: ProjectsService,
+    private userService: UserService
+  ) { }
 
   ngOnInit(): void {
-    this.filteredAvailableMembers = [...this.allMembers];
+    this.getUsers();
+  }
+
+  // ✅ Load Users from API
+  getUsers(): void {
+    this.userService.getUsers().subscribe({
+      next: (res: any) => {
+        if (res.success && res.data) {
+          this.allMembers = res.data.map((u: any) => ({
+            id: u.user_id,
+            name: u.full_name,
+            initials: this.getInitials(u.full_name),
+            color: '#5B5BD6',
+            role: 'Member'
+          }));
+
+          this.filteredAvailableMembers = [...this.allMembers];
+        }
+      },
+      error: () => {
+        this.errorMsg = 'Failed to load users';
+      }
+    });
+  }
+
+  // Compute initials from full name
+  getInitials(fullName: string): string {
+    return fullName
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .toUpperCase();
   }
 
   // ── Member search / filter ──────────────────────────────────
@@ -130,32 +157,31 @@ export class CreateProject implements OnInit {
     this.loading = true;
     this.errorMsg = '';
 
-    // Build the new project object — replace setTimeout with ProjectService.create() later
-    const newProject = {
-      id: 'p' + Date.now(),
-      name: this.form.name.trim(),
+    const payload = {
+      title: this.form.name.trim(),
       description: this.form.description.trim(),
       status: this.form.status,
       color: this.form.color,
-      priority: this.form.priority,
-      dueDate: this.form.dueDate,
-      members: this.selectedMembers,
-      tasksCompleted: 0,
-      tasksTotal: 0,
-      createdAt: new Date().toISOString(),
+      due_date: this.form.dueDate,
+      priority: this.form.priority === 'medium' ? 'mid' : this.form.priority,
+      members: this.selectedMembers.map(m => m.id)
     };
 
-    // Simulate API call
-    setTimeout(() => {
-      // Save to localStorage mock store
-      const existing = JSON.parse(localStorage.getItem('vorta_projects') || '[]');
-      existing.push(newProject);
-      localStorage.setItem('vorta_projects', JSON.stringify(existing));
-
-      this.loading = false;
-      // Navigate to the new project's detail page
-      this.router.navigate(['/app/projects', newProject.id]);
-    }, 1200);
+    // ✅ Call API instead of localStorage
+    this.projectService.createProject(payload).subscribe({
+      next: (res: any) => {
+        if (res.success) {
+          this.router.navigate(['/app/projects', res.project_id]);
+        } else {
+          this.errorMsg = res.message || 'Failed to create project';
+        }
+        this.loading = false;
+      },
+      error: () => {
+        this.errorMsg = 'Server error while creating project';
+        this.loading = false;
+      }
+    });
   }
 
   onCancel(): void {

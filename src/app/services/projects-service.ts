@@ -10,9 +10,12 @@ export class ProjectsService {
 
   constructor(private http: HttpClient) { }
 
-  // Handles both list fetch and single project fetch
   projectDetails(id?: string): Observable<any> {
     const url = id ? `${this.apiUrl}?id=${id}` : this.apiUrl;
     return this.http.get<any>(url);
+  }
+
+  createProject(projectData: any): Observable<any> {
+    return this.http.post('http://localhost/VortaAppApis/projects/create.php', projectData);
   }
 }

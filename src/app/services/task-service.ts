@@ -5,11 +5,11 @@ import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root',
 })
-export class UserService {
+export class TaskService {
 
   constructor(private http: HttpClient) { }
 
-  getUsers(): Observable<any> {
-    return this.http.get('http://localhost/VortaAppApis/users/get-all.php');
+  createTask(taskData: any): Observable<any> {
+    return this.http.post('http://localhost/VortaAppApis/tasks/create.php', taskData);
   }
 }

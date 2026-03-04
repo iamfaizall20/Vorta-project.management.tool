@@ -4,7 +4,7 @@
   <header class="topbar">
     <div class="topbar__left">
       <nav class="breadcrumb">
-        <a class="breadcrumb__item" routerLink="/app">Vorta</a>
+        <a class="breadcrumb__item" routerLink="/app">Home</a>
         <span class="material-icons breadcrumb__sep">chevron_right</span>
         <span class="breadcrumb__item breadcrumb__item--active">My Tasks</span>
       </nav>
@@ -411,30 +411,36 @@
   </div>
 
   <!-- ══════════════════════════════════════════════════════
-         CREATE TASK DRAWER
-    ══════════════════════════════════════════════════════ -->
+     CREATE TASK DRAWER
+══════════════════════════════════════════════════════ -->
   <div class="drawer-backdrop" *ngIf="showCreate" (click)="closeCreate()"></div>
   <div class="drawer drawer--create" [class.drawer--open]="showCreate">
     <div class="drawer__head drawer__head--row">
       <h2 class="drawer__title">New Task</h2>
-      <button class="icon-btn" (click)="closeCreate()"><span class="material-icons">close</span></button>
+      <button class="icon-btn" type="button" (click)="closeCreate()">
+        <span class="material-icons">close</span>
+      </button>
     </div>
+
     <div class="drawer__body">
-      <form #taskForm="ngForm" (ngSubmit)="onCreateTask(taskForm)" novalidate class="create-form">
+      <form #taskForm="ngForm" (ngSubmit)="onCreateTask(taskForm)" class="create-form" novalidate>
 
         <!-- Title -->
         <div class="field" [class.field--error]="titleRef.invalid && titleRef.touched">
           <label class="field__label">Title <span class="field__req">*</span></label>
           <input name="title" type="text" class="field__input" placeholder="What needs to be done?"
             [(ngModel)]="draft.title" #titleRef="ngModel" required minlength="2" />
-          <span class="field__msg" *ngIf="titleRef.touched && titleRef.errors?.['required']">Title is required.</span>
+          <span class="field__msg" *ngIf="titleRef.touched && titleRef.errors?.['required']">
+            Title is required.
+          </span>
         </div>
 
         <!-- Description -->
         <div class="field">
           <label class="field__label">Description</label>
-          <textarea name="desc" class="field__input field__textarea" rows="3" placeholder="Add more context…"
-            [(ngModel)]="draft.description"></textarea>
+          <textarea name="description" class="field__input field__textarea" rows="3" placeholder="Add more context…"
+            [(ngModel)]="draft.description">
+        </textarea>
         </div>
 
         <!-- Project -->
@@ -442,9 +448,13 @@
           <label class="field__label">Project</label>
           <div class="field__wrap field__wrap--sel">
             <span class="material-icons field__icon">folder_open</span>
-            <select name="project" class="field__input field__select" [(ngModel)]="draft.projectId">
+            <select name="projectId" class="field__input field__select" [(ngModel)]="draft.projectId"
+              (change)="onProjectChange()">
+
               <option value="">— No project —</option>
-              <option *ngFor="let p of allProjects" [value]="p.id">{{ p.name }}</option>
+              <option *ngFor="let p of allProjects" [value]="p.id">
+                {{ p.name }}
+              </option>
             </select>
             <span class="material-icons field__arr">expand_more</span>
           </div>
@@ -455,10 +465,9 @@
           <label class="field__label">Priority</label>
           <div class="priority-options">
             <button type="button" class="popt" *ngFor="let p of priorityOptions"
-              [class.popt--active]="draft.priority === p.value"
-              [class]="'popt popt--' + p.value + (draft.priority === p.value ? ' popt--active' : '')"
-              (click)="draft.priority = p.value">
-              <span class="material-icons">{{ p.icon }}</span>{{ p.label }}
+              [class.popt--active]="draft.priority === p.value" (click)="draft.priority = p.value">
+              <span class="material-icons">{{ p.icon }}</span>
+              {{ p.label }}
             </button>
           </div>
         </div>
@@ -482,15 +491,18 @@
           <label class="field__label">Due date</label>
           <div class="field__wrap">
             <span class="material-icons field__icon">calendar_today</span>
-            <input name="due" type="date" class="field__input field__date" [(ngModel)]="draft.dueDate" [min]="today"
+            <input name="dueDate" type="date" class="field__input field__date" [(ngModel)]="draft.dueDate" [min]="today"
               style="padding-left: 38px;" />
           </div>
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn-ghost btn-sm" (click)="closeCreate()">Cancel</button>
-          <button type="submit" class="btn-primary btn-sm" [disabled]="taskForm.invalid || creating"
-            [class.btn--loading]="creating">
+          <button type="button" class="btn-ghost btn-sm" (click)="closeCreate()">
+            Cancel
+          </button>
+
+          <button type="submit" class="btn-primary btn-sm" [disabled]="taskForm.invalid || creating">
+
             <span class="spinner" *ngIf="creating"></span>
             <span class="material-icons" *ngIf="!creating">add</span>
             {{ creating ? 'Adding…' : 'Add Task' }}

@@ -3,8 +3,8 @@ import { CommonModule, TitleCasePipe } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProjectsService } from '../../services/projects-service';
-
-// ── Interfaces ────────────────────────────────────────────────
+import { TaskService } from '../../services/task-service';
+// ───────────────── Interfaces ─────────────────
 export interface Member {
   id: string;
   name: string;
@@ -56,6 +56,7 @@ interface ActivityItem {
   time: string;
 }
 
+// ───────────────── Component ─────────────────
 @Component({
   selector: 'app-project-detail',
   standalone: true,
@@ -74,7 +75,6 @@ export class ProjectDetail implements OnInit {
   taskCreating = false;
   today = new Date().toISOString().split('T')[0];
 
-  // ── Task draft ─────────────────────────────────────────────
   taskDraft: TaskDraft = {
     title: '',
     description: '',
@@ -84,7 +84,6 @@ export class ProjectDetail implements OnInit {
     dueDate: '',
   };
 
-  // ── Kanban columns ─────────────────────────────────────────
   taskColumns = [
     { status: 'todo', label: 'To Do', color: '#A1A1AA' },
     { status: 'inprogress', label: 'In Progress', color: '#5B5BD6' },
@@ -92,16 +91,14 @@ export class ProjectDetail implements OnInit {
     { status: 'done', label: 'Done', color: '#30A46C' },
   ];
 
-  // ── Quick status actions on card ───────────────────────────
-  quickStatuses: { value: Task['status']; label: string; icon: string; color: string }[] = [
+  quickStatuses = [
     { value: 'todo', label: 'Todo', icon: 'radio_button_unchecked', color: '#A1A1AA' },
     { value: 'inprogress', label: 'In Progress', icon: 'autorenew', color: '#5B5BD6' },
     { value: 'blocked', label: 'Blocked', icon: 'block', color: '#EF4444' },
     { value: 'done', label: 'Done', icon: 'check_circle', color: '#30A46C' },
   ];
 
-  // ── Priority options ───────────────────────────────────────
-  priorityOptions: { value: 'low' | 'medium' | 'high' | 'critical'; label: string; icon: string }[] = [
+  priorityOptions = [
     { value: 'low', label: 'Low', icon: 'south' },
     { value: 'medium', label: 'Medium', icon: 'remove' },
     { value: 'high', label: 'High', icon: 'north' },
@@ -113,30 +110,37 @@ export class ProjectDetail implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private projectService: ProjectsService
+    private projectService: ProjectsService,
+    private taskService: TaskService
   ) { }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-
-    if (id) {
-      this.fetchProjectData(id);
-    }
+    if (id) this.fetchProjectData(id);
   }
 
-  // ── Data Fetching ──────────────────────────────────────────
+  // ───────────────── Fetch Project ─────────────────
   fetchProjectData(id: string): void {
     this.isLoading = true;
+
     this.projectService.projectDetails(id).subscribe({
       next: (data) => {
-        // Map API Task structure to Component Task Interface
-        const mappedTasks = data.tasks.map((t: any) => ({
-          ...t,
+
+        const mappedTasks: Task[] = data.tasks.map((t: any) => ({
+          id: t.id,
+          projectId: t.project_id,
+          title: t.title,
+          description: t.description,
+          priority: t.priority,
+          status: this.mapBackendStatus(t.status),
+          dueDate: t.due_date,
+          createdAt: t.created_at,
           assignee: t.assignee_id ? {
             id: t.assignee_id,
             name: t.assignee_name,
             initials: this.getInitials(t.assignee_name),
-            color: t.assignee_avatar || '#5B5BD6'
+            color: t.assignee_avatar || '#5B5BD6',
+            role: ''
           } : null
         }));
 
@@ -160,8 +164,15 @@ export class ProjectDetail implements OnInit {
     });
   }
 
+  private mapBackendStatus(status: string): Task['status'] {
+    if (status === 'pending') return 'todo';
+    return status as Task['status'];
+  }
+
   private getInitials(name: string): string {
-    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : '??';
+    return name
+      ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+      : '??';
   }
 
   buildActivity(): void {
@@ -171,13 +182,13 @@ export class ProjectDetail implements OnInit {
     ];
   }
 
-  // ── Computed ───────────────────────────────────────────────
+  // ───────────────── Computed ─────────────────
   get completedCount(): number {
     return this.project?.tasks.filter(t => t.status === 'done').length ?? 0;
   }
 
   getProgress(): number {
-    if (!this.project || !this.project.tasks || this.project.tasks.length === 0) return 0;
+    if (!this.project || this.project.tasks.length === 0) return 0;
     return Math.round((this.completedCount / this.project.tasks.length) * 100);
   }
 
@@ -199,7 +210,7 @@ export class ProjectDetail implements OnInit {
     ];
   }
 
-  // ── Helpers ────────────────────────────────────────────────
+  // ───────────────── Helpers ─────────────────
   getPriorityIcon(priority: string): string {
     const map: Record<string, string> = { low: 'south', medium: 'remove', high: 'north', critical: 'priority_high' };
     return map[priority] ?? 'remove';
@@ -220,7 +231,8 @@ export class ProjectDetail implements OnInit {
     return !!dateStr && new Date(dateStr) < new Date();
   }
 
-  // ── Task CRUD (Local UI State) ─────────────────────────────
+  // ───────────────── Task CRUD ─────────────────
+
   openCreateTask(defaultStatus: string = 'todo'): void {
     this.taskDraft = { title: '', description: '', assigneeId: '', priority: 'medium', status: defaultStatus as any, dueDate: '' };
     this.showCreateTask = true;
@@ -233,35 +245,31 @@ export class ProjectDetail implements OnInit {
 
   onCreateTask(form: NgForm): void {
     if (form.invalid || !this.project) return;
+
     this.taskCreating = true;
 
-    // Simulate API delay - Replace with actual API call in the future
-    setTimeout(() => {
-      const assignee = this.project!.members.find(m => m.id === this.taskDraft.assigneeId) ?? null;
-      const newTask: Task = {
-        id: 't' + Date.now(),
-        projectId: this.project!.id,
-        title: this.taskDraft.title.trim(),
-        description: this.taskDraft.description.trim(),
-        assignee,
-        priority: this.taskDraft.priority,
-        status: 'todo',
-        dueDate: this.taskDraft.dueDate,
-        createdAt: new Date().toISOString(),
-      };
+    const taskBody = {
+      title: this.taskDraft.title.trim(),
+      description: this.taskDraft.description.trim(),
+      priority: this.taskDraft.priority,
+      status: 'pending',
+      due_date: this.taskDraft.dueDate,
+      project_id: Number(this.project.id),
+      user_id: Number(this.taskDraft.assigneeId)
+    };
 
-      this.project!.tasks = [...this.project!.tasks, newTask];
-      this.updateProjectStatus();
-
-      this.activity.unshift({
-        initials: 'FH', color: '#5B5BD6', actor: 'You',
-        action: 'created task', target: newTask.title, time: 'Just now',
-      });
-
-      this.taskCreating = false;
-      this.showCreateTask = false;
-      form.resetForm();
-    }, 800);
+    this.taskService.createTask(taskBody).subscribe({
+      next: () => {
+        this.fetchProjectData(this.project!.id);
+        this.taskCreating = false;
+        this.showCreateTask = false;
+        form.resetForm();
+      },
+      error: (err: any) => {
+        console.error('Create Task Error:', err);
+        this.taskCreating = false;
+      }
+    });
   }
 
   updateTaskStatus(task: Task, status: Task['status']): void {
@@ -282,6 +290,18 @@ export class ProjectDetail implements OnInit {
     this.updateTaskStatus(task, task.status === 'done' ? 'todo' : 'done');
   }
 
+  onEditTask(task: Task): void {
+    this.openCreateTask(task.status);
+    this.taskDraft = {
+      title: task.title,
+      description: task.description,
+      assigneeId: task.assignee?.id ?? '',
+      priority: task.priority,
+      status: task.status as any,
+      dueDate: task.dueDate,
+    };
+  }
+
   onDeleteTask(task: Task): void {
     if (!this.project) return;
     this.project.tasks = this.project.tasks.filter(t => t.id !== task.id);
@@ -298,16 +318,6 @@ export class ProjectDetail implements OnInit {
     this.openTaskDetail(task);
   }
 
-  onEditTask(task: Task): void {
-    this.selectedTask = null;
-    this.openCreateTask(task.status);
-    this.taskDraft.title = task.title;
-    this.taskDraft.description = task.description;
-    this.taskDraft.assigneeId = task.assignee?.id ?? '';
-    this.taskDraft.priority = task.priority;
-    this.taskDraft.dueDate = task.dueDate;
-  }
-
   updateProjectStatus(): void {
     if (!this.project || this.project.tasks.length === 0) return;
     const pct = this.getProgress();
@@ -318,7 +328,7 @@ export class ProjectDetail implements OnInit {
     }
   }
 
-  // ── Navigation ─────────────────────────────────────────────
+  // ───────────────── Navigation ─────────────────
   goBack(): void {
     this.router.navigate(['/app/projects']);
   }
@@ -328,7 +338,6 @@ export class ProjectDetail implements OnInit {
   }
 
   onDeleteProject(): void {
-    // Implement API call for deletion here
     this.router.navigate(['/app/projects']);
   }
 }

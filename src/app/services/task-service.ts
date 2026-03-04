@@ -10,6 +10,8 @@ export class TaskService {
   constructor(private http: HttpClient) { }
 
   createTask(taskData: any): Observable<any> {
-    return this.http.post('http://localhost/VortaAppApis/tasks/create.php', taskData);
+    return this.http.post('http://localhost/VortaAppApis/tasks/create.php', taskData, {
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }

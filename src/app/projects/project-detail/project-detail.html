@@ -150,7 +150,7 @@
                             <div class="task-card__actions" (click)="$event.stopPropagation()">
                                 <button class="status-btn" *ngFor="let s of quickStatuses"
                                     [class.status-btn--active]="t.status === s.value" [style.--btn-color]="s.color"
-                                    (click)="updateTaskStatus(t, s.value as 'todo' | 'inprogress' | 'done' | 'blocked')" [title]="s.label">
+                                    (click)="updateTaskStatus(t, s.value)" [title]="s.label">
                                     <span class="material-icons">{{ s.icon }}</span>
                                 </button>
                             </div>
@@ -421,7 +421,7 @@
                     <button type="button" class="priority-btn" *ngFor="let p of priorityOptions"
                         [class.priority-btn--active]="taskDraft.priority === p.value"
                         [class]="'priority-btn priority-btn--' + p.value + (taskDraft.priority === p.value ? ' priority-btn--active' : '')"
-                        (click)="taskDraft.priority = p.value">
+                        (click)="setTaskPriority(p.value)">
                         <span class="material-icons">{{ p.icon }}</span>
                         {{ p.label }}
                     </button>

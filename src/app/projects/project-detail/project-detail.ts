@@ -4,6 +4,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProjectsService } from '../../services/projects-service';
 import { TaskService } from '../../services/task-service';
+
 // ───────────────── Interfaces ─────────────────
 export interface Member {
   id: string;
@@ -91,14 +92,16 @@ export class ProjectDetail implements OnInit {
     { status: 'done', label: 'Done', color: '#30A46C' },
   ];
 
-  quickStatuses = [
+  // ✅ FIX: Typed `value` as Task['status'] so no cast is needed in the template
+  quickStatuses: { value: Task['status']; label: string; icon: string; color: string }[] = [
     { value: 'todo', label: 'Todo', icon: 'radio_button_unchecked', color: '#A1A1AA' },
     { value: 'inprogress', label: 'In Progress', icon: 'autorenew', color: '#5B5BD6' },
     { value: 'blocked', label: 'Blocked', icon: 'block', color: '#EF4444' },
     { value: 'done', label: 'Done', icon: 'check_circle', color: '#30A46C' },
   ];
 
-  priorityOptions = [
+  // ✅ FIX: Typed `value` as Task['priority'] so no cast is needed in the template
+  priorityOptions: { value: Task['priority']; label: string; icon: string }[] = [
     { value: 'low', label: 'Low', icon: 'south' },
     { value: 'medium', label: 'Medium', icon: 'remove' },
     { value: 'high', label: 'High', icon: 'north' },
@@ -125,7 +128,6 @@ export class ProjectDetail implements OnInit {
 
     this.projectService.projectDetails(id).subscribe({
       next: (data) => {
-
         const mappedTasks: Task[] = data.tasks.map((t: any) => ({
           id: t.id,
           projectId: t.project_id,
@@ -171,14 +173,17 @@ export class ProjectDetail implements OnInit {
 
   private getInitials(name: string): string {
     return name
-      ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+      ? name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
       : '??';
   }
 
   buildActivity(): void {
     if (!this.project) return;
     this.activity = [
-      { initials: 'SYS', color: '#5B5BD6', actor: 'System', action: 'loaded project', target: this.project.name, time: 'Just now' }
+      {
+        initials: 'SYS', color: '#5B5BD6', actor: 'System',
+        action: 'loaded project', target: this.project.name, time: 'Just now'
+      }
     ];
   }
 
@@ -212,7 +217,9 @@ export class ProjectDetail implements OnInit {
 
   // ───────────────── Helpers ─────────────────
   getPriorityIcon(priority: string): string {
-    const map: Record<string, string> = { low: 'south', medium: 'remove', high: 'north', critical: 'priority_high' };
+    const map: Record<string, string> = {
+      low: 'south', medium: 'remove', high: 'north', critical: 'priority_high'
+    };
     return map[priority] ?? 'remove';
   }
 
@@ -234,13 +241,23 @@ export class ProjectDetail implements OnInit {
   // ───────────────── Task CRUD ─────────────────
 
   openCreateTask(defaultStatus: string = 'todo'): void {
-    this.taskDraft = { title: '', description: '', assigneeId: '', priority: 'medium', status: defaultStatus as any, dueDate: '' };
+    this.taskDraft = {
+      title: '', description: '', assigneeId: '',
+      priority: 'medium',
+      status: defaultStatus as TaskDraft['status'],
+      dueDate: ''
+    };
     this.showCreateTask = true;
     this.selectedTask = null;
   }
 
   closeCreateTask(): void {
     this.showCreateTask = false;
+  }
+
+  // ✅ FIX: Dedicated typed setter called from the template instead of direct assignment
+  setTaskPriority(value: Task['priority']): void {
+    this.taskDraft.priority = value;
   }
 
   onCreateTask(form: NgForm): void {
@@ -260,12 +277,14 @@ export class ProjectDetail implements OnInit {
 
     this.taskService.createTask(taskBody).subscribe({
       next: () => {
+        alert("Task Added");
         this.fetchProjectData(this.project!.id);
         this.taskCreating = false;
         this.showCreateTask = false;
         form.resetForm();
       },
       error: (err: any) => {
+        alert("Failed to add task");
         console.error('Create Task Error:', err);
         this.taskCreating = false;
       }
@@ -297,7 +316,7 @@ export class ProjectDetail implements OnInit {
       description: task.description,
       assigneeId: task.assignee?.id ?? '',
       priority: task.priority,
-      status: task.status as any,
+      status: task.status as TaskDraft['status'],
       dueDate: task.dueDate,
     };
   }

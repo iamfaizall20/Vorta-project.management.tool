@@ -1,14 +1,14 @@
 <div class="project-detail" *ngIf="project; else loading">
 
     <!-- ── Project colour accent bar ─────────────────────────── -->
-    <div class="project-accent-bar" [style.background]="project.color"></div>
+    <!-- <div class="project-accent-bar" [style.background]="project.color"></div> -->
 
     <!-- ── Topbar ─────────────────────────────────────────────── -->
     <header class="topbar">
         <div class="topbar__left">
-            <button class="back-btn" (click)="goBack()">
+            <!-- <button class="back-btn" (click)="goBack()">
                 <span class="material-icons">arrow_back</span>
-            </button>
+            </button> -->
             <nav class="breadcrumb">
                 <a class="breadcrumb__item" routerLink="/app">Vorta</a>
                 <span class="material-icons breadcrumb__sep">chevron_right</span>

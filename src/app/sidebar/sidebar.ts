@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { ProjectsService } from '../services/projects-service';
 
 interface NavItem {
   icon: string;
@@ -52,12 +53,7 @@ export class Sidebar implements OnInit {
   ];
 
   // ── Recent projects (replace with ProjectService later) ──────
-  recentProjects: RecentProject[] = [
-    { id: 'p1', name: 'Backend API', color: '#5B5BD6', status: 'active' },
-    { id: 'p2', name: 'Mobile Redesign', color: '#E54D2E', status: 'active' },
-    { id: 'p3', name: 'Auth & Onboarding', color: '#30A46C', status: 'completed' },
-    { id: 'p4', name: 'Design System', color: '#F76B15', status: 'hold' },
-  ];
+  recentProjects: RecentProject[] = [];
 
   // ── Recent items ─────────────────────────────────────────────
   recentItems: RecentItem[] = [
@@ -66,7 +62,7 @@ export class Sidebar implements OnInit {
     { icon: 'person', label: 'Ali Raza — Profile', route: '/app/members' },
   ];
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private projectService: ProjectsService) { }
 
   ngOnInit(): void {
     const saved = localStorage.getItem('vorta_sidebar_collapsed');
@@ -77,8 +73,26 @@ export class Sidebar implements OnInit {
     const user = JSON.parse(localStorage.getItem('user')!);
 
     this.currentUser.name = user.full_name;
+    this.getRecentProjects();
   }
 
+  getRecentProjects() {
+    this.projectService.projectDetails().subscribe({
+      next: (res: any[]) => {
+        if (res) {
+          this.recentProjects = res.slice(0, 5).map(project => ({
+            id: project.id,
+            name: project.name,
+            color: project.color,
+            status: project.status
+          }));
+        }
+      },
+      error: (err: any) => {
+        console.log('Error', err.message);
+      }
+    });
+  }
   toggleCollapse(): void {
     this.isCollapsed = !this.isCollapsed;
     localStorage.setItem('vorta_sidebar_collapsed', String(this.isCollapsed));

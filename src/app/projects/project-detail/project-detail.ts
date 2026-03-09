@@ -92,7 +92,6 @@ export class ProjectDetail implements OnInit {
     { status: 'done', label: 'Done', color: '#30A46C' },
   ];
 
-  // ✅ FIX: Typed `value` as Task['status'] so no cast is needed in the template
   quickStatuses: { value: Task['status']; label: string; icon: string; color: string }[] = [
     { value: 'todo', label: 'Todo', icon: 'radio_button_unchecked', color: '#A1A1AA' },
     { value: 'inprogress', label: 'In Progress', icon: 'autorenew', color: '#5B5BD6' },
@@ -100,7 +99,6 @@ export class ProjectDetail implements OnInit {
     { value: 'done', label: 'Done', icon: 'check_circle', color: '#30A46C' },
   ];
 
-  // ✅ FIX: Typed `value` as Task['priority'] so no cast is needed in the template
   priorityOptions: { value: Task['priority']; label: string; icon: string }[] = [
     { value: 'low', label: 'Low', icon: 'south' },
     { value: 'medium', label: 'Medium', icon: 'remove' },
@@ -117,9 +115,14 @@ export class ProjectDetail implements OnInit {
     private taskService: TaskService
   ) { }
 
+  // ───────────────── Init ─────────────────
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) this.fetchProjectData(id);
+
+    if (id) {
+      this.fetchProjectData(id);
+      this.fetchTasks(Number(id));
+    }
   }
 
   // ───────────────── Fetch Project ─────────────────
@@ -128,27 +131,10 @@ export class ProjectDetail implements OnInit {
 
     this.projectService.projectDetails(id).subscribe({
       next: (data) => {
-        const mappedTasks: Task[] = data.tasks.map((t: any) => ({
-          id: t.id,
-          projectId: t.project_id,
-          title: t.title,
-          description: t.description,
-          priority: t.priority,
-          status: this.mapBackendStatus(t.status),
-          dueDate: t.due_date,
-          createdAt: t.created_at,
-          assignee: t.assignee_id ? {
-            id: t.assignee_id,
-            name: t.assignee_name,
-            initials: this.getInitials(t.assignee_name),
-            color: t.assignee_avatar || '#5B5BD6',
-            role: ''
-          } : null
-        }));
 
         this.project = {
           ...data,
-          tasks: mappedTasks,
+          tasks: [],
           members: data.members.map((m: any) => ({
             ...m,
             initials: this.getInitials(m.name),
@@ -166,9 +152,49 @@ export class ProjectDetail implements OnInit {
     });
   }
 
+  // ───────────────── Fetch Tasks ─────────────────
+  fetchTasks(projectId: number): void {
+
+    this.taskService.getTasks(projectId).subscribe({
+
+      next: (res: any) => {
+
+        if (!this.project) return;
+
+        const mappedTasks: Task[] = res.tasks.map((t: any) => ({
+          id: String(t.task_id),
+          projectId: String(projectId),
+          title: t.title,
+          description: t.description,
+          priority: t.priority,
+          status: this.mapBackendStatus(t.status),
+          dueDate: t.due_date,
+          createdAt: t.created_at,
+          assignee: null
+        }));
+
+        this.project.tasks = mappedTasks;
+      },
+
+      error: (err) => {
+        console.error('Fetch Tasks Error:', err);
+      }
+
+    });
+
+  }
+
   private mapBackendStatus(status: string): Task['status'] {
-    if (status === 'pending') return 'todo';
-    return status as Task['status'];
+
+    const map: Record<string, Task['status']> = {
+      pending: 'todo',
+      todo: 'todo',
+      inprogress: 'inprogress',
+      done: 'done',
+      blocked: 'blocked'
+    };
+
+    return map[status] ?? 'todo';
   }
 
   private getInitials(name: string): string {
@@ -181,8 +207,12 @@ export class ProjectDetail implements OnInit {
     if (!this.project) return;
     this.activity = [
       {
-        initials: 'SYS', color: '#5B5BD6', actor: 'System',
-        action: 'loaded project', target: this.project.name, time: 'Just now'
+        initials: 'SYS',
+        color: '#5B5BD6',
+        actor: 'System',
+        action: 'loaded project',
+        target: this.project.name,
+        time: 'Just now'
       }
     ];
   }
@@ -218,7 +248,10 @@ export class ProjectDetail implements OnInit {
   // ───────────────── Helpers ─────────────────
   getPriorityIcon(priority: string): string {
     const map: Record<string, string> = {
-      low: 'south', medium: 'remove', high: 'north', critical: 'priority_high'
+      low: 'south',
+      medium: 'remove',
+      high: 'north',
+      critical: 'priority_high'
     };
     return map[priority] ?? 'remove';
   }
@@ -239,10 +272,11 @@ export class ProjectDetail implements OnInit {
   }
 
   // ───────────────── Task CRUD ─────────────────
-
   openCreateTask(defaultStatus: string = 'todo'): void {
     this.taskDraft = {
-      title: '', description: '', assigneeId: '',
+      title: '',
+      description: '',
+      assigneeId: '',
       priority: 'medium',
       status: defaultStatus as TaskDraft['status'],
       dueDate: ''
@@ -255,7 +289,6 @@ export class ProjectDetail implements OnInit {
     this.showCreateTask = false;
   }
 
-  // ✅ FIX: Dedicated typed setter called from the template instead of direct assignment
   setTaskPriority(value: Task['priority']): void {
     this.taskDraft.priority = value;
   }
@@ -278,7 +311,7 @@ export class ProjectDetail implements OnInit {
     this.taskService.createTask(taskBody).subscribe({
       next: () => {
         alert("Task Added");
-        this.fetchProjectData(this.project!.id);
+        this.fetchTasks(Number(this.project!.id));
         this.taskCreating = false;
         this.showCreateTask = false;
         form.resetForm();
@@ -292,17 +325,44 @@ export class ProjectDetail implements OnInit {
   }
 
   updateTaskStatus(task: Task, status: Task['status']): void {
-    task.status = status;
-    if (this.selectedTask?.id === task.id) {
-      this.selectedTask = { ...task };
-    }
-    this.updateProjectStatus();
 
-    this.activity.unshift({
-      initials: 'FH', color: '#5B5BD6', actor: 'You',
-      action: status === 'done' ? 'completed' : `set to ${status}`,
-      target: task.title, time: 'Just now',
+    const oldStatus = task.status;
+    task.status = status;
+
+    this.taskService.updateTaskStatus(Number(task.id), status).subscribe({
+
+      next: () => {
+
+        if (this.selectedTask?.id === task.id) {
+          this.selectedTask = { ...task };
+        }
+
+        this.updateProjectStatus();
+
+        this.activity.unshift({
+          initials: 'FH',
+          color: '#5B5BD6',
+          actor: 'You',
+          action: status === 'done' ? 'completed' : `set to ${status}`,
+          target: task.title,
+          time: 'Just now',
+        });
+
+      },
+
+      error: (err) => {
+
+        console.error("Status Update Failed", err);
+
+        // revert if API fails
+        task.status = oldStatus;
+
+        alert("Failed to update task status");
+
+      }
+
     });
+
   }
 
   quickToggleDone(task: Task): void {
@@ -311,6 +371,7 @@ export class ProjectDetail implements OnInit {
 
   onEditTask(task: Task): void {
     this.openCreateTask(task.status);
+
     this.taskDraft = {
       title: task.title,
       description: task.description,
@@ -323,6 +384,7 @@ export class ProjectDetail implements OnInit {
 
   onDeleteTask(task: Task): void {
     if (!this.project) return;
+
     this.project.tasks = this.project.tasks.filter(t => t.id !== task.id);
     this.selectedTask = null;
     this.updateProjectStatus();
@@ -339,7 +401,9 @@ export class ProjectDetail implements OnInit {
 
   updateProjectStatus(): void {
     if (!this.project || this.project.tasks.length === 0) return;
+
     const pct = this.getProgress();
+
     if (pct === 100) {
       this.project.status = 'completed';
     } else if (pct > 0 && this.project.status === 'new') {
@@ -359,4 +423,5 @@ export class ProjectDetail implements OnInit {
   onDeleteProject(): void {
     this.router.navigate(['/app/projects']);
   }
+
 }

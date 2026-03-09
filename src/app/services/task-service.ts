@@ -14,4 +14,18 @@ export class TaskService {
       headers: { 'Content-Type': 'application/json' }
     });
   }
+
+  getTasks(id: number): Observable<any> {
+    return this.http.get(`http://localhost/VortaAppApis/tasks/read.php?id=${id}`)
+  }
+
+  updateTaskStatus(taskId: number, status: string) {
+    return this.http.post(
+      'http://localhost/VortaAppApis/tasks/update-status.php',
+      {
+        task_id: taskId,
+        status: status
+      }
+    );
+  }
 }

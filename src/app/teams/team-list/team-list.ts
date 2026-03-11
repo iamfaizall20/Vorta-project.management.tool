@@ -13,7 +13,7 @@ export interface TeamMember {
 }
 
 export interface Team {
-  id: string;
+  id: number; // changed to number
   name: string;
   description: string;
   type: string;
@@ -34,7 +34,6 @@ export interface Team {
   styleUrls: ['./team-list.css'],
 })
 export class TeamList implements OnInit {
-
   teams: Team[] = [];
   searchQuery = '';
   searchFocused = false;
@@ -48,6 +47,7 @@ export class TeamList implements OnInit {
 
   apiUrl = 'http://localhost/VortaAppApis/teams/create-team.php';
   getTeamsUrl = 'http://localhost/VortaAppApis/teams/get-teams.php';
+  deleteTeamUrl = 'http://localhost/VortaAppApis/teams/delete-team.php';
 
   colorOptions = [
     '#5B5BD6', '#E54D2E', '#30A46C', '#F59E0B',
@@ -78,15 +78,11 @@ export class TeamList implements OnInit {
     this.loadTeams();
   }
 
-  // ── Load teams from API ───────────────────────────────
   loadTeams(): void {
     this.http.get<{ success: boolean, teams: Team[] }>(this.getTeamsUrl).subscribe({
       next: res => {
-        if (res.success) {
-          this.teams = res.teams;
-        } else {
-          console.error('Failed to load teams: API returned success=false');
-        }
+        if (res.success) this.teams = res.teams;
+        else console.error('Failed to load teams: API returned success=false');
       },
       error: err => console.error('Error loading teams', err)
     });
@@ -128,11 +124,8 @@ export class TeamList implements OnInit {
   }
 
   toggleDraftMember(m: TeamMember): void {
-    if (this.isDraftMemberSelected(m)) {
-      this.teamDraft.memberIds = this.teamDraft.memberIds.filter(id => id !== m.id);
-    } else {
-      this.teamDraft.memberIds = [...this.teamDraft.memberIds, m.id];
-    }
+    if (this.isDraftMemberSelected(m)) this.teamDraft.memberIds = this.teamDraft.memberIds.filter(id => id !== m.id);
+    else this.teamDraft.memberIds = [...this.teamDraft.memberIds, m.id];
   }
 
   iconForType(type: string): string {
@@ -149,9 +142,7 @@ export class TeamList implements OnInit {
 
   onCreateTeam(form: NgForm): void {
     if (form.invalid) return;
-
     this.creating = true;
-
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     const payload = {
@@ -163,12 +154,17 @@ export class TeamList implements OnInit {
       members: this.teamDraft.memberIds
     };
 
-    this.http.post<{ team_id: string }>(this.apiUrl, payload).subscribe({
-      next: (res) => {
-        const members = this.allMembers.filter(m => this.teamDraft.memberIds.includes(m.id));
+    this.http.post<{ success: boolean, team_id: number }>(this.apiUrl, payload).subscribe({
+      next: res => {
+        if (!res.success) {
+          alert('Failed to create team');
+          this.creating = false;
+          return;
+        }
 
+        const members = this.allMembers.filter(m => this.teamDraft.memberIds.includes(m.id));
         const newTeam: Team = {
-          id: res.team_id ?? ('tm' + Date.now()),
+          id: res.team_id, // numeric ID from backend
           name: payload.name,
           description: payload.description,
           type: payload.type,
@@ -210,8 +206,8 @@ export class TeamList implements OnInit {
   onDeleteTeam(team: Team) {
     if (!confirm(`Are you sure you want to delete "${team.name}"?`)) return;
 
-    this.http.request('DELETE', 'http://localhost/VortaAppApis/teams/delete-team.php', {
-      body: { id: team.id },
+    this.http.delete(this.deleteTeamUrl, {
+      body: { id: team.id }, // numeric ID
       headers: { 'Content-Type': 'application/json' }
     }).subscribe({
       next: (res: any) => {
@@ -219,9 +215,7 @@ export class TeamList implements OnInit {
           this.teams = this.teams.filter(t => t.id !== team.id);
           if (this.selectedTeam?.id === team.id) this.selectedTeam = null;
           alert(res.message);
-        } else {
-          alert(res.message);
-        }
+        } else alert(res.message);
       },
       error: () => alert('Server error, please try again')
     });
@@ -239,5 +233,4 @@ export class TeamList implements OnInit {
     this.selectedTeam = null;
     this.showCreateTeam = false;
   }
-
 }

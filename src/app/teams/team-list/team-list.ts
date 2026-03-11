@@ -2,6 +2,7 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 
 export interface TeamMember {
   id: string;
@@ -45,19 +46,22 @@ export class TeamList implements OnInit {
   menuX = 0;
   menuY = 0;
 
+  apiUrl = 'http://localhost/VortaAppApis/teams/create-team.php';
+  getTeamsUrl = 'http://localhost/VortaAppApis/teams/get-teams.php';
+
   colorOptions = [
     '#5B5BD6', '#E54D2E', '#30A46C', '#F59E0B',
     '#EC4899', '#7C7CE8', '#0EA5E9', '#8B5CF6', '#14B8A6', '#F97316',
   ];
 
   allMembers: TeamMember[] = [
-    { id: 'u1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
-    { id: 'u2', name: 'Ali Raza', initials: 'AR', color: '#E54D2E', role: 'Member' },
-    { id: 'u3', name: 'Sara Zeb', initials: 'SZ', color: '#30A46C', role: 'Member' },
-    { id: 'u4', name: 'Omar Farooq', initials: 'OF', color: '#F59E0B', role: 'Member' },
-    { id: 'u5', name: 'Aisha Malik', initials: 'AM', color: '#EC4899', role: 'Member' },
-    { id: 'u6', name: 'Bilal Khan', initials: 'BK', color: '#7C7CE8', role: 'Member' },
-    { id: 'u7', name: 'Nadia Hussain', initials: 'NH', color: '#0EA5E9', role: 'Member' },
+    { id: '1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
+    { id: '2', name: 'Ali Raza', initials: 'AR', color: '#E54D2E', role: 'Member' },
+    { id: '3', name: 'Sara Zeb', initials: 'SZ', color: '#30A46C', role: 'Member' },
+    { id: '4', name: 'Omar Farooq', initials: 'OF', color: '#F59E0B', role: 'Member' },
+    { id: '5', name: 'Aisha Malik', initials: 'AM', color: '#EC4899', role: 'Member' },
+    { id: '6', name: 'Bilal Khan', initials: 'BK', color: '#7C7CE8', role: 'Member' },
+    { id: '7', name: 'Nadia Hussain', initials: 'NH', color: '#0EA5E9', role: 'Member' },
   ];
 
   teamDraft = {
@@ -68,67 +72,24 @@ export class TeamList implements OnInit {
     memberIds: [] as string[],
   };
 
+  constructor(private http: HttpClient) { }
+
   ngOnInit(): void {
     this.loadTeams();
   }
 
+  // ── Load teams from API ───────────────────────────────
   loadTeams(): void {
-    const stored = JSON.parse(localStorage.getItem('vorta_teams') || '[]') as Team[];
-    if (stored.length === 0) {
-      this.teams = this.getMockTeams();
-      localStorage.setItem('vorta_teams', JSON.stringify(this.teams));
-    } else {
-      this.teams = stored;
-    }
-  }
-
-  getMockTeams(): Team[] {
-    return [
-      {
-        id: 'tm1', name: 'Backend Squad', description: 'Owns all server-side services, APIs, and database architecture.',
-        type: 'Engineering', icon: 'code', color: '#5B5BD6',
-        members: [
-          { id: 'u1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
-          { id: 'u2', name: 'Ali Raza', initials: 'AR', color: '#E54D2E', role: 'Member' },
-          { id: 'u3', name: 'Sara Zeb', initials: 'SZ', color: '#30A46C', role: 'Member' },
-        ],
-        lead: { id: 'u1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
-        projectCount: 3, taskCount: 14, createdAt: new Date().toISOString(),
+    this.http.get<{ success: boolean, teams: Team[] }>(this.getTeamsUrl).subscribe({
+      next: res => {
+        if (res.success) {
+          this.teams = res.teams;
+        } else {
+          console.error('Failed to load teams: API returned success=false');
+        }
       },
-      {
-        id: 'tm2', name: 'Design Team', description: 'Responsible for UI/UX design, brand identity and the Vorta design system.',
-        type: 'Design', icon: 'palette', color: '#EC4899',
-        members: [
-          { id: 'u3', name: 'Sara Zeb', initials: 'SZ', color: '#30A46C', role: 'Member' },
-          { id: 'u5', name: 'Aisha Malik', initials: 'AM', color: '#EC4899', role: 'Member' },
-        ],
-        lead: { id: 'u5', name: 'Aisha Malik', initials: 'AM', color: '#EC4899', role: 'Member' },
-        projectCount: 2, taskCount: 8, createdAt: new Date().toISOString(),
-      },
-      {
-        id: 'tm3', name: 'Mobile Team', description: 'Building and maintaining the iOS and Android apps.',
-        type: 'Engineering', icon: 'smartphone', color: '#E54D2E',
-        members: [
-          { id: 'u4', name: 'Omar Farooq', initials: 'OF', color: '#F59E0B', role: 'Member' },
-          { id: 'u6', name: 'Bilal Khan', initials: 'BK', color: '#7C7CE8', role: 'Member' },
-          { id: 'u7', name: 'Nadia Hussain', initials: 'NH', color: '#0EA5E9', role: 'Member' },
-        ],
-        lead: { id: 'u4', name: 'Omar Farooq', initials: 'OF', color: '#F59E0B', role: 'Member' },
-        projectCount: 1, taskCount: 6, createdAt: new Date().toISOString(),
-      },
-      {
-        id: 'tm4', name: 'Product & QA', description: 'Product strategy, roadmap planning and quality assurance.',
-        type: 'Product', icon: 'inventory_2', color: '#30A46C',
-        members: [
-          { id: 'u1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
-          { id: 'u4', name: 'Omar Farooq', initials: 'OF', color: '#F59E0B', role: 'Member' },
-          { id: 'u5', name: 'Aisha Malik', initials: 'AM', color: '#EC4899', role: 'Member' },
-          { id: 'u7', name: 'Nadia Hussain', initials: 'NH', color: '#0EA5E9', role: 'Member' },
-        ],
-        lead: { id: 'u1', name: 'Faizal Hassan', initials: 'FH', color: '#5B5BD6', role: 'Manager' },
-        projectCount: 4, taskCount: 20, createdAt: new Date().toISOString(),
-      },
-    ];
+      error: err => console.error('Error loading teams', err)
+    });
   }
 
   get filteredTeams(): Team[] {
@@ -158,7 +119,9 @@ export class TeamList implements OnInit {
     this.selectedTeam = null;
   }
 
-  closeCreateTeam(): void { this.showCreateTeam = false; }
+  closeCreateTeam(): void {
+    this.showCreateTeam = false;
+  }
 
   isDraftMemberSelected(m: TeamMember): boolean {
     return this.teamDraft.memberIds.includes(m.id);
@@ -174,35 +137,62 @@ export class TeamList implements OnInit {
 
   iconForType(type: string): string {
     const map: Record<string, string> = {
-      Engineering: 'code', Design: 'palette', Product: 'inventory_2',
-      Marketing: 'campaign', Operations: 'settings', QA: 'bug_report',
+      Engineering: 'code',
+      Design: 'palette',
+      Product: 'inventory_2',
+      Marketing: 'campaign',
+      Operations: 'settings',
+      QA: 'bug_report',
     };
     return map[type] ?? 'groups';
   }
 
   onCreateTeam(form: NgForm): void {
     if (form.invalid) return;
+
     this.creating = true;
-    setTimeout(() => {
-      const members = this.allMembers.filter(m => this.teamDraft.memberIds.includes(m.id));
-      const newTeam: Team = {
-        id: 'tm' + Date.now(),
-        name: this.teamDraft.name.trim(),
-        description: this.teamDraft.description.trim(),
-        type: this.teamDraft.type,
-        icon: this.iconForType(this.teamDraft.type),
-        color: this.teamDraft.color,
-        members,
-        lead: members[0] ?? null,
-        projectCount: 0,
-        taskCount: 0,
-        createdAt: new Date().toISOString(),
-      };
-      this.teams = [newTeam, ...this.teams];
-      this.saveTeams();
-      this.creating = false;
-      this.showCreateTeam = false;
-    }, 800);
+
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    const payload = {
+      name: this.teamDraft.name.trim(),
+      description: this.teamDraft.description.trim(),
+      type: this.teamDraft.type,
+      color: this.teamDraft.color,
+      creator_id: user.user_id,
+      members: this.teamDraft.memberIds
+    };
+
+    this.http.post<{ team_id: string }>(this.apiUrl, payload).subscribe({
+      next: (res) => {
+        const members = this.allMembers.filter(m => this.teamDraft.memberIds.includes(m.id));
+
+        const newTeam: Team = {
+          id: res.team_id ?? ('tm' + Date.now()),
+          name: payload.name,
+          description: payload.description,
+          type: payload.type,
+          icon: this.iconForType(payload.type),
+          color: payload.color,
+          members: members,
+          lead: members[0] ?? null,
+          projectCount: 0,
+          taskCount: 0,
+          createdAt: new Date().toISOString(),
+        };
+
+        this.teams = [newTeam, ...this.teams];
+        this.creating = false;
+        this.showCreateTeam = false;
+        this.teamDraft = { name: '', description: '', type: 'Engineering', color: '#5B5BD6', memberIds: [] };
+
+        alert(`Team "${newTeam.name}" created successfully!`);
+      },
+      error: () => {
+        this.creating = false;
+        alert('Failed to create team. Please try again.');
+      }
+    });
   }
 
   onEditTeam(t: Team): void {
@@ -217,11 +207,24 @@ export class TeamList implements OnInit {
     this.showCreateTeam = true;
   }
 
-  onDeleteTeam(t: Team): void {
-    if (!confirm(`Delete team "${t.name}"?`)) return;
-    this.teams = this.teams.filter(tm => tm.id !== t.id);
-    if (this.selectedTeam?.id === t.id) this.selectedTeam = null;
-    this.saveTeams();
+  onDeleteTeam(team: Team) {
+    if (!confirm(`Are you sure you want to delete "${team.name}"?`)) return;
+
+    this.http.request('DELETE', 'http://localhost/VortaAppApis/teams/delete-team.php', {
+      body: { id: team.id },
+      headers: { 'Content-Type': 'application/json' }
+    }).subscribe({
+      next: (res: any) => {
+        if (res.success) {
+          this.teams = this.teams.filter(t => t.id !== team.id);
+          if (this.selectedTeam?.id === team.id) this.selectedTeam = null;
+          alert(res.message);
+        } else {
+          alert(res.message);
+        }
+      },
+      error: () => alert('Server error, please try again')
+    });
   }
 
   openTeamMenu(t: Team, e: MouseEvent): void {
@@ -230,14 +233,11 @@ export class TeamList implements OnInit {
     this.menuY = e.clientY;
   }
 
-  saveTeams(): void {
-    localStorage.setItem('vorta_teams', JSON.stringify(this.teams));
-  }
-
   @HostListener('document:keydown.escape')
   onEsc(): void {
     this.menuTeam = null;
     this.selectedTeam = null;
     this.showCreateTeam = false;
   }
+
 }

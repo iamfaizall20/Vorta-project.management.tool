@@ -25,7 +25,6 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
   background: var(--bg);
   font-family: 'DM Sans', system-ui, sans-serif;
   position: relative;
@@ -247,9 +246,10 @@
 .detail-layout {
   flex: 1;
   min-height: 0;
+  height: 100%;
+  overflow: hidden;
   display: grid;
   grid-template-columns: 1fr 280px;
-  overflow: hidden;
 }
 
 /* ─── Main ───────────────────────────────────────────────────── */
@@ -262,7 +262,6 @@
   gap: 24px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
-
   flex: 1;
   min-height: 0;
 }
@@ -539,13 +538,13 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   align-items: start;
+  overflow: visible;
 }
 
 /* ─── Kanban Column ──────────────────────────────────────────── */
 .kanban-col {
   background: var(--surface-2);
   border-radius: var(--radius);
-  overflow: hidden;
 }
 
 .kanban-col__head {

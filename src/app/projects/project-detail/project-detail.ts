@@ -421,7 +421,17 @@ export class ProjectDetail implements OnInit {
   }
 
   onDeleteProject(): void {
-    this.router.navigate(['/app/projects']);
+    const projectId: number = Number(this.route.snapshot.paramMap.get('id'));
+
+    this.projectService.deleteProject(projectId).subscribe({
+      next: (res: any) => {
+        alert(res.message);
+        this.router.navigate(['/app/projects']);
+      },
+      error: (err: any) => {
+        console.log('Error', err.message);
+      }
+    })
   }
 
 }

@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { Welcomepage } from './welcomepage/welcomepage';
-import { Signup } from './signup/signup';
-import { Login } from './login/login';
+import { OrgRegistrationComponent } from './org-registration/org-registration';
 import { AppShell } from './app-shell/app-shell';
 import { Dashboard } from './dashboard/dashboard';
 import { ProjectList } from './projects/project-list/project-list';
@@ -12,13 +11,14 @@ import { TeamList } from './teams/team-list/team-list';
 import { Members } from './members/members';
 import { Profile } from './profile/profile';
 import { Settings } from './settings/settings';
+import { LoginComponent } from './login/login';
 
 export const routes: Routes = [
 
   // ── Public routes (no sidebar) ──────────────────────────────
   { path: '', component: Welcomepage },
-  { path: 'signup', component: Signup },
-  { path: 'login', component: Login },
+  { path: 'org-registration', component: OrgRegistrationComponent },
+  { path: 'login', component: LoginComponent },
 
   // ── Authenticated shell (sidebar lives here) ─────────────────
   {

@@ -13,7 +13,7 @@ export interface TeamMember {
 }
 
 export interface Team {
-  id: number; // changed to number
+  id: number;
   name: string;
   description: string;
   type: string;
@@ -207,7 +207,7 @@ export class TeamList implements OnInit {
     if (!confirm(`Are you sure you want to delete "${team.name}"?`)) return;
 
     this.http.delete(this.deleteTeamUrl, {
-      body: { id: team.id }, // numeric ID
+      body: { id: team.id },
       headers: { 'Content-Type': 'application/json' }
     }).subscribe({
       next: (res: any) => {

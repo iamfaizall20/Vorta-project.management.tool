@@ -1,0 +1,375 @@
+<div class="auth-shell">
+
+    <!-- ── Left Panel ──────────────────────────────────────────── -->
+    <div class="auth-left">
+        <div class="auth-left__inner">
+            <div class="brand">
+                <span class="brand__name">Vorta</span>
+            </div>
+
+            <div class="auth-left__body">
+                <h1 class="auth-left__title">
+                    Build your<br />
+                    <span class="accent">workspace.</span>
+                </h1>
+                <p class="auth-left__sub">
+                    Register your organization and get instant access to a complete project management platform designed
+                    for modern teams.
+                </p>
+
+                <ul class="feature-list">
+                    <li *ngFor="let f of features">
+                        <span class="material-icons feature-list__icon">{{ f.icon }}</span>
+                        <span>{{ f.text }}</span>
+                    </li>
+                </ul>
+            </div>
+
+            <p class="auth-left__footer">
+                © {{ year }} Vorta &nbsp;·&nbsp;
+                <a href="https://github.com/imafaizall20" target="_blank" rel="noopener">&#64;faizal hassan</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- ── Right Panel ─────────────────────────────────────────── -->
+    <div class="auth-right">
+        <div class="auth-card">
+
+            <!-- Progress Bar -->
+            <div class="progress-section">
+                <div class="progress-bar">
+                    <div class="progress-bar__fill" [style.width.%]="progressPercentage"></div>
+                </div>
+                <div class="progress-steps">
+                    <div class="progress-step" [class.progress-step--active]="currentStep >= 1"
+                        [class.progress-step--current]="currentStep === 1">
+                        <div class="progress-step__circle">
+                            <span class="material-icons" *ngIf="currentStep > 1">check</span>
+                            <span *ngIf="currentStep <= 1">1</span>
+                        </div>
+                        <span class="progress-step__label">Organization</span>
+                    </div>
+                    <div class="progress-step" [class.progress-step--active]="currentStep >= 2"
+                        [class.progress-step--current]="currentStep === 2">
+                        <div class="progress-step__circle">
+                            <span class="material-icons" *ngIf="currentStep > 2">check</span>
+                            <span *ngIf="currentStep <= 2">2</span>
+                        </div>
+                        <span class="progress-step__label">Admin Setup</span>
+                    </div>
+                    <div class="progress-step" [class.progress-step--active]="currentStep >= 3"
+                        [class.progress-step--current]="currentStep === 3">
+                        <div class="progress-step__circle">3</div>
+                        <span class="progress-step__label">Confirmation</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Organization Details -->
+            <div class="step-content" *ngIf="currentStep === 1">
+                <div class="auth-card__head">
+                    <h2 class="auth-card__title">Organization Details</h2>
+                    <p class="auth-card__sub">Tell us about your organization to get started.</p>
+                </div>
+
+                <form class="auth-form">
+                    <!-- Organization Name -->
+                    <div class="field">
+                        <label class="field__label" for="orgName">Organization Name</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">business</span>
+                            <input id="orgName" name="orgName" type="text" class="field__input"
+                                placeholder="Acme Corporation" [(ngModel)]="orgData.name" required />
+                        </div>
+                    </div>
+
+                    <!-- Industry -->
+                    <div class="field">
+                        <label class="field__label" for="industry">Industry</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">category</span>
+                            <select id="industry" name="industry" class="field__input field__select"
+                                [(ngModel)]="orgData.industry" required>
+                                <option value="" disabled>Select your industry</option>
+                                <option *ngFor="let ind of industries" [value]="ind">{{ ind }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Company Size -->
+                    <div class="field">
+                        <label class="field__label" for="size">Company Size</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">groups</span>
+                            <select id="size" name="size" class="field__input field__select" [(ngModel)]="orgData.size"
+                                required>
+                                <option value="" disabled>Select company size</option>
+                                <option *ngFor="let size of companySizes" [value]="size">{{ size }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Country -->
+                    <div class="field">
+                        <label class="field__label" for="country">Country</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">public</span>
+                            <input id="country" name="country" type="text" class="field__input"
+                                placeholder="United States" [(ngModel)]="orgData.country" required />
+                        </div>
+                    </div>
+
+                    <!-- Organization Email -->
+                    <div class="field">
+                        <label class="field__label" for="orgEmail">Organization Email</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">mail</span>
+                            <input id="orgEmail" name="orgEmail" type="email" class="field__input"
+                                placeholder="contact@acmecorp.com" [(ngModel)]="orgData.email" required />
+                        </div>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="field">
+                        <label class="field__label" for="phone">Phone Number</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">phone</span>
+                            <input id="phone" name="phone" type="tel" class="field__input"
+                                placeholder="+1 (555) 000-0000" [(ngModel)]="orgData.phone" required />
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 2: Admin Setup -->
+            <div class="step-content" *ngIf="currentStep === 2">
+                <div class="auth-card__head">
+                    <h2 class="auth-card__title">Admin Account Setup</h2>
+                    <p class="auth-card__sub">Create the primary administrator account for your organization.</p>
+                </div>
+
+                <form class="auth-form">
+                    <!-- Full Name -->
+                    <div class="field">
+                        <label class="field__label" for="adminFullName">Full Name</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">badge</span>
+                            <input id="adminFullName" name="adminFullName" type="text" class="field__input"
+                                placeholder="John Doe" [(ngModel)]="adminData.fullName" required />
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="field">
+                        <label class="field__label" for="adminEmail">Email Address</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">mail</span>
+                            <input id="adminEmail" name="adminEmail" type="email" class="field__input"
+                                placeholder="admin@acmecorp.com" [(ngModel)]="adminData.email" required />
+                        </div>
+                    </div>
+
+                    <!-- Username -->
+                    <div class="field">
+                        <label class="field__label" for="adminUsername">Username</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">person</span>
+                            <input id="adminUsername" name="adminUsername" type="text" class="field__input"
+                                placeholder="johndoe" [(ngModel)]="adminData.username" required />
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="field">
+                        <label class="field__label" for="adminPassword">Password</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">lock</span>
+                            <input id="adminPassword" name="adminPassword" [type]="showPassword ? 'text' : 'password'"
+                                class="field__input" placeholder="Min. 8 characters" [(ngModel)]="adminData.password"
+                                required (input)="onPasswordInput()" />
+                            <button type="button" class="field__toggle" (click)="showPassword = !showPassword"
+                                tabindex="-1">
+                                <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                            </button>
+                        </div>
+
+                        <!-- Strength bar -->
+                        <div class="strength" *ngIf="adminData.password">
+                            <div class="strength__bar">
+                                <div class="strength__fill" [style.width]="strengthPercent + '%'"
+                                    [class]="'strength__fill--' + strengthLabel.toLowerCase()"></div>
+                            </div>
+                            <span class="strength__label" [class]="'strength__label--' + strengthLabel.toLowerCase()">
+                                {{ strengthLabel }}
+                            </span>
+                        </div>
+
+                        <!-- Rules checklist -->
+                        <ul class="rules" *ngIf="adminData.password">
+                            <li [class.rules__item--ok]="ruleLength">
+                                <span class="material-icons">{{ ruleLength ? 'check_circle' : 'radio_button_unchecked'
+                                    }}</span>
+                                At least 8 characters
+                            </li>
+                            <li [class.rules__item--ok]="ruleUpper">
+                                <span class="material-icons">{{ ruleUpper ? 'check_circle' : 'radio_button_unchecked'
+                                    }}</span>
+                                One uppercase letter
+                            </li>
+                            <li [class.rules__item--ok]="ruleNumber">
+                                <span class="material-icons">{{ ruleNumber ? 'check_circle' : 'radio_button_unchecked'
+                                    }}</span>
+                                One number
+                            </li>
+                            <li [class.rules__item--ok]="ruleSpecial">
+                                <span class="material-icons">{{ ruleSpecial ? 'check_circle' : 'radio_button_unchecked'
+                                    }}</span>
+                                One special character (!&#64;#$%)
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="field">
+                        <label class="field__label" for="adminConfirmPassword">Confirm Password</label>
+                        <div class="field__wrap">
+                            <span class="material-icons field__icon-left">lock_reset</span>
+                            <input id="adminConfirmPassword" name="adminConfirmPassword"
+                                [type]="showConfirmPassword ? 'text' : 'password'" class="field__input"
+                                placeholder="Re-enter your password" [(ngModel)]="adminData.confirmPassword" required />
+                            <button type="button" class="field__toggle"
+                                (click)="showConfirmPassword = !showConfirmPassword" tabindex="-1">
+                                <span class="material-icons">{{ showConfirmPassword ? 'visibility_off' : 'visibility'
+                                    }}</span>
+                            </button>
+                        </div>
+                        <span class="field__msg" *ngIf="adminData.confirmPassword && !passwordsMatch">
+                            Passwords do not match.
+                        </span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 3: Confirmation -->
+            <div class="step-content" *ngIf="currentStep === 3">
+                <div class="auth-card__head">
+                    <h2 class="auth-card__title">Review & Confirm</h2>
+                    <p class="auth-card__sub">Please review your information before submitting.</p>
+                </div>
+
+                <!-- Success State -->
+                <div class="success-state" *ngIf="successMsg && generatedOrgId">
+                    <div class="success-icon">
+                        <span class="material-icons">check_circle</span>
+                    </div>
+                    <h3 class="success-title">Registration Successful!</h3>
+                    <p class="success-msg">{{ successMsg }}</p>
+
+                    <div class="org-id-card">
+                        <div class="org-id-card__label">Your Organization ID</div>
+                        <div class="org-id-card__value">{{ generatedOrgId }}</div>
+                        <p class="org-id-card__note">
+                            <span class="material-icons">info</span>
+                            Save this ID. You and your team will need it to log in.
+                        </p>
+                    </div>
+
+                    <button class="btn-submit" (click)="router.navigate(['/login'])">
+                        <span>Go to Login</span>
+                        <span class="material-icons btn-submit__arrow">arrow_forward</span>
+                    </button>
+                </div>
+
+                <!-- Review State -->
+                <div class="review-section" *ngIf="!successMsg">
+                    <div class="review-card">
+                        <div class="review-card__header">
+                            <span class="material-icons">business</span>
+                            <h3>Organization Details</h3>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-item__label">Organization Name</span>
+                            <span class="review-item__value">{{ orgData.name }}</span>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-item__label">Industry</span>
+                            <span class="review-item__value">{{ orgData.industry }}</span>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-item__label">Company Size</span>
+                            <span class="review-item__value">{{ orgData.size }}</span>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-item__label">Country</span>
+                            <span class="review-item__value">{{ orgData.country }}</span>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-item__label">Email</span>
+                            <span class="review-item__value">{{ orgData.email }}</span>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-item__label">Phone</span>
+                            <span class="review-item__value">{{ orgData.phone }}</span>
+                        </div>
+                    </div>
+
+                    <div class="review-card">
+                        <div class="review-card__header">
+                            <span class="material-icons">admin_panel_settings</span>
+                            <h3>Admin Account</h3>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-item__label">Full Name</span>
+                            <span class="review-item__value">{{ adminData.fullName }}</span>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-item__label">Email</span>
+                            <span class="review-item__value">{{ adminData.email }}</span>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-item__label">Username</span>
+                            <span class="review-item__value">{{ adminData.username }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error banner -->
+            <div class="error-banner" *ngIf="errorMsg">
+                <span class="material-icons">error_outline</span>
+                {{ errorMsg }}
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="nav-buttons" *ngIf="!successMsg">
+                <button type="button" class="btn-secondary" (click)="prevStep()" *ngIf="currentStep > 1"
+                    [disabled]="loading">
+                    <span class="material-icons">arrow_back</span>
+                    <span>Back</span>
+                </button>
+
+                <button type="button" class="btn-submit" (click)="currentStep < totalSteps ? nextStep() : onSubmit()"
+                    [disabled]="loading || (currentStep === 1 && !canProceedStep1()) || (currentStep === 2 && !canProceedStep2())"
+                    [class.btn-submit--loading]="loading">
+                    <ng-container *ngIf="!loading">
+                        <span>{{ currentStep === totalSteps ? 'Complete Registration' : 'Continue' }}</span>
+                        <span class="material-icons btn-submit__arrow">
+                            {{ currentStep === totalSteps ? 'check' : 'arrow_forward' }}
+                        </span>
+                    </ng-container>
+                    <ng-container *ngIf="loading">
+                        <span class="spinner"></span>
+                        <span>Processing…</span>
+                    </ng-container>
+                </button>
+            </div>
+
+            <!-- Auth switch -->
+            <p class="auth-switch" *ngIf="!successMsg">
+                Already have an organization?
+                <a routerLink="/login" class="auth-switch__link">Log in →</a>
+            </p>
+        </div>
+    </div>
+</div>

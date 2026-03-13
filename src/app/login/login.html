@@ -4,7 +4,6 @@
     <div class="auth-left">
         <div class="auth-left__inner">
             <div class="brand">
-                <!-- <span class="material-icons brand__icon">task_alt</span> -->
                 <span class="brand__name">Vorta</span>
             </div>
 
@@ -35,26 +34,43 @@
         <div class="auth-card">
 
             <div class="auth-card__head">
-                <h2 class="auth-card__title">Log in to TaskFlow</h2>
-                <p class="auth-card__sub">Enter your credentials to access your workspace.</p>
+                <h2 class="auth-card__title">Log in to your workspace</h2>
+                <p class="auth-card__sub">Enter your organization and user credentials to continue.</p>
             </div>
 
             <form #loginForm="ngForm" (ngSubmit)="onSubmit(loginForm)" novalidate class="auth-form">
 
-                <!-- Username -->
-                <div class="field" [class.field--error]="username.invalid && username.touched"
-                    [class.field--valid]="username.valid && username.touched">
-                    <label class="field__label" for="username">Username</label>
+                <!-- Organization ID -->
+                <div class="field" [class.field--error]="organizationId.invalid && organizationId.touched"
+                    [class.field--valid]="organizationId.valid && organizationId.touched">
+                    <label class="field__label" for="organizationId">Organization ID</label>
                     <div class="field__wrap">
-                        <span class="material-icons field__icon-left">person</span>
-                        <input id="username" name="username" type="text" class="field__input"
-                            placeholder="Your username" ngModel #username="ngModel" required />
-                        <span class="field__status-icon material-icons" *ngIf="username.touched">
-                            {{ username.valid ? 'check_circle' : 'cancel' }}
+                        <span class="material-icons field__icon-left">business</span>
+                        <input id="organizationId" name="organizationId" type="text" class="field__input"
+                            placeholder="ORG-XXXXXXXX" ngModel #organizationId="ngModel" required />
+                        <span class="field__status-icon material-icons" *ngIf="organizationId.touched">
+                            {{ organizationId.valid ? 'check_circle' : 'cancel' }}
                         </span>
                     </div>
-                    <span class="field__msg" *ngIf="username.touched && username.errors?.['required']">
-                        Username is required.
+                    <span class="field__msg" *ngIf="organizationId.touched && organizationId.errors?.['required']">
+                        Organization ID is required.
+                    </span>
+                </div>
+
+                <!-- User ID -->
+                <div class="field" [class.field--error]="userId.invalid && userId.touched"
+                    [class.field--valid]="userId.valid && userId.touched">
+                    <label class="field__label" for="userId">User ID</label>
+                    <div class="field__wrap">
+                        <span class="material-icons field__icon-left">person</span>
+                        <input id="userId" name="userId" type="text" class="field__input" placeholder="Your user ID"
+                            ngModel #userId="ngModel" required />
+                        <span class="field__status-icon material-icons" *ngIf="userId.touched">
+                            {{ userId.valid ? 'check_circle' : 'cancel' }}
+                        </span>
+                    </div>
+                    <span class="field__msg" *ngIf="userId.touched && userId.errors?.['required']">
+                        User ID is required.
                     </span>
                 </div>
 
@@ -110,8 +126,8 @@
                 </div>
 
                 <p class="auth-switch">
-                    Don't have an account?
-                    <a routerLink="/signup" class="auth-switch__link">Sign up free →</a>
+                    Don't have an organization?
+                    <a routerLink="/register" class="auth-switch__link">Register organization →</a>
                 </p>
 
             </form>

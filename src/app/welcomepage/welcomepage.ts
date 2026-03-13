@@ -28,54 +28,54 @@ export class Welcomepage implements OnInit {
 
   features: Feature[] = [
     {
-      icon: 'groups',
-      title: 'Team Management',
+      icon: 'business_center',
+      title: 'Organization-Based Workspaces',
       description:
-        'Build your team from registered members, assign roles, and keep everyone accountable under one roof.',
-      tag: 'Manager controlled',
+        'Each organization gets its own isolated workspace. Your projects, teams, and data stay private and secure within your organization.',
+      tag: 'Complete isolation',
+    },
+    {
+      icon: 'admin_panel_settings',
+      title: 'Admin Control Panel',
+      description:
+        'Organization admins have full control. Create user accounts, assign IDs, manage permissions, and oversee all projects from a centralized dashboard.',
+      tag: 'Full admin access',
     },
     {
       icon: 'account_tree',
-      title: 'Project Pipelines',
+      title: 'Project Management',
       description:
-        'Create projects, define scope, set deadlines, and track them from New → Active → Completed in real time.',
-      tag: 'Full lifecycle',
+        'Create and manage projects within your organization. Track progress from inception to completion with real-time updates visible only to your team.',
+      tag: 'Organization-scoped',
     },
     {
       icon: 'task_alt',
-      title: 'Task Assignment',
+      title: 'Task Assignment & Tracking',
       description:
-        'Managers assign tasks to specific members. Members update status — progress calculates automatically.',
-      tag: 'Auto progress %',
+        'Admins assign tasks to team members using their User IDs. Members update task status, and progress is calculated automatically in real-time.',
+      tag: 'Auto progress tracking',
     },
     {
-      icon: 'insights',
-      title: 'Live Progress Tracking',
+      icon: 'group_add',
+      title: 'Team Member Management',
       description:
-        'Every check-mark a team member makes instantly updates the project progress bar. No manual reporting.',
-      tag: 'Real-time updates',
+        'Admins add team members through the control panel, generate User IDs, and manage access. Members log in using Org ID + User ID + Password.',
+      tag: 'Secure ID-based login',
     },
     {
-      icon: 'tune',
-      title: 'Role-Based Access',
+      icon: 'security',
+      title: 'Enterprise-Grade Security',
       description:
-        'Managers see everything and control it. Members see their assigned work and update their own tasks.',
-      tag: 'Manager & Member roles',
-    },
-    {
-      icon: 'dark_mode',
-      title: 'Built for Comfort',
-      description:
-        'Dark mode, light mode, accent colors and a clean interface designed to keep your team in flow.',
-      tag: 'Fully customizable',
+        'Multi-level authentication ensures only authorized users access your organization data. Complete privacy with organization-specific credentials.',
+      tag: 'Bank-level security',
     },
   ];
 
   stats: Stat[] = [
+    { value: '1K+', label: 'Organizations Registered' },
     { value: '50K+', label: 'Projects Managed' },
     { value: '200K+', label: 'Tasks Completed' },
-    { value: '99.9%', label: 'Uptime' },
-    { value: '10K+', label: 'Active Teams' },
+    { value: '99.9%', label: 'Uptime Guaranteed' },
   ];
 
   constructor(private router: Router) { }
@@ -83,10 +83,14 @@ export class Welcomepage implements OnInit {
   ngOnInit(): void { }
 
   onGetStarted(): void {
-    this.router.navigate(['/signup']);
+    this.router.navigate(['/org-registration']);
   }
 
   onTryDemo(): void {
     this.router.navigate(['/login']);
+  }
+
+  closeAnnouncement(): void {
+    this.showAnnouncement = false;
   }
 }

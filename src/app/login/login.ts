@@ -29,7 +29,7 @@ export class LoginComponent {
     this.errorMsg = '';
 
     const payload = {
-      organization_id: form.value.organizationId,
+      organization_id: form.value.organizationId.toUpperCase(),
       user_id: form.value.userId,
       password: form.value.password,
     };

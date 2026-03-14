@@ -36,6 +36,7 @@ export class OrgRegistrationComponent {
   errorMsg = '';
   successMsg = '';
   generatedOrgId = '';
+  generatedUserId = 0;
 
   // Organization data
   orgData: OrgData = {
@@ -185,6 +186,12 @@ export class OrgRegistrationComponent {
 
     if (this.currentStep < this.totalSteps) {
       this.currentStep++;
+
+      // Generate IDs when moving to step 3 (review/confirmation)
+      if (this.currentStep === 3 && !this.generatedOrgId) {
+        this.generatedOrgId = this.generateOrgId();
+        this.generatedUserId = this.generateUserId();
+      }
     }
   }
 
@@ -193,6 +200,36 @@ export class OrgRegistrationComponent {
     if (this.currentStep > 1) {
       this.currentStep--;
     }
+  }
+
+  /**
+   * Generate Organization ID in format: ORG-ABC123
+   * Combines random uppercase letters and numbers
+   */
+  private generateOrgId(): string {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+
+    let orgId = 'ORG-';
+
+    // Generate 3 random letters
+    for (let i = 0; i < 3; i++) {
+      orgId += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+
+    // Generate 3 random numbers
+    for (let i = 0; i < 3; i++) {
+      orgId += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    }
+
+    return orgId;
+  }
+
+  /**
+   * Generate User ID as a random integer between 100000 and 999999
+   */
+  private generateUserId(): number {
+    return Math.floor(100000 + Math.random() * 900000);
   }
 
   onSubmit(): void {
@@ -204,9 +241,22 @@ export class OrgRegistrationComponent {
     this.loading = true;
     this.errorMsg = '';
 
+    // Use the IDs that were already generated when user reached step 3
+    // If somehow they're not generated, generate them now
+    if (!this.generatedOrgId) {
+      this.generatedOrgId = this.generateOrgId();
+    }
+    if (!this.generatedUserId) {
+      this.generatedUserId = this.generateUserId();
+    }
+
     const payload = {
-      organization: this.orgData,
+      organization: {
+        ...this.orgData,
+        organization_id: this.generatedOrgId
+      },
       admin: {
+        user_id: this.generatedUserId,
         full_name: this.adminData.fullName,
         email: this.adminData.email,
         username: this.adminData.username,
@@ -215,13 +265,21 @@ export class OrgRegistrationComponent {
     };
 
     this.http
-      .post('http://localhost/VortaAppApis/auth/register-organization.php', payload)
+      .post('http://localhost/VortaAppApis/auth/org-registration.php', payload)
       .subscribe({
         next: (res: any) => {
           this.loading = false;
           if (res.response) {
             this.successMsg = 'Organization registered successfully!';
-            this.generatedOrgId = res.organization_id || 'ORG-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+            // Use server-provided IDs if available, otherwise keep the locally generated ones
+            if (res.organization_id) {
+              this.generatedOrgId = res.organization_id;
+            }
+            if (res.user_id) {
+              this.generatedUserId = res.user_id;
+            }
+
             // Optional: redirect after a delay
             setTimeout(() => {
               this.router.navigate(['/login']);

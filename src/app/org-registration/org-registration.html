@@ -275,6 +275,15 @@
                         </p>
                     </div>
 
+                    <div class="org-id-card" style="margin-top: 16px;">
+                        <div class="org-id-card__label">Admin User ID</div>
+                        <div class="org-id-card__value">{{ generatedUserId }}</div>
+                        <p class="org-id-card__note">
+                            <span class="material-icons">info</span>
+                            Your unique user identification number.
+                        </p>
+                    </div>
+
                     <button class="btn-submit" (click)="router.navigate(['/login'])">
                         <span>Go to Login</span>
                         <span class="material-icons btn-submit__arrow">arrow_forward</span>
@@ -283,6 +292,32 @@
 
                 <!-- Review State -->
                 <div class="review-section" *ngIf="!successMsg">
+                    <!-- Generated IDs Preview -->
+                    <div class="review-card"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 20px;">
+                        <div class="review-card__header"
+                            style="color: white; border-bottom-color: rgba(255,255,255,0.2);">
+                            <span class="material-icons">verified</span>
+                            <h3>Generated Identifiers</h3>
+                        </div>
+                        <div class="review-item" style="border-bottom-color: rgba(255,255,255,0.1);">
+                            <span class="review-item__label" style="color: rgba(255,255,255,0.9);">Organization
+                                ID</span>
+                            <span class="review-item__value"
+                                style="color: white; font-weight: 600; font-size: 1.1em;">{{ generatedOrgId }}</span>
+                        </div>
+                        <div class="review-item" style="border-bottom: none;">
+                            <span class="review-item__label" style="color: rgba(255,255,255,0.9);">Admin User ID</span>
+                            <span class="review-item__value"
+                                style="color: white; font-weight: 600; font-size: 1.1em;">{{ generatedUserId }}</span>
+                        </div>
+                        <p
+                            style="margin: 16px 0 0 0; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; font-size: 0.85em; display: flex; align-items: center; gap: 8px;">
+                            <span class="material-icons" style="font-size: 18px;">info</span>
+                            <span>Save these IDs securely. They will be required for login.</span>
+                        </p>
+                    </div>
+
                     <div class="review-card">
                         <div class="review-card__header">
                             <span class="material-icons">business</span>

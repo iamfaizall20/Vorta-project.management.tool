@@ -2,21 +2,45 @@
 
     <!-- ── Top: Brand ───────────────────────────────────────────── -->
     <div class="sidebar__brand">
-        <div class="brand-mark">
+        <button class="collapse-btn collapse-btn--toggle" (click)="toggleCollapse()"
+            [title]="isCollapsed ? 'Expand' : 'Collapse'" *ngIf="isCollapsed">
+            <span class="material-icons">menu</span>
+        </button>
+        <div class="brand-mark" *ngIf="!isCollapsed">
             <span class="material-icons brand-mark__icon">hub</span>
         </div>
         <span class="brand-mark__name" *ngIf="!isCollapsed">Vorta</span>
-        <button class="collapse-btn" (click)="toggleCollapse()" [title]="isCollapsed ? 'Expand' : 'Collapse'">
-            <span class="material-icons">{{ isCollapsed ? 'chevron_right' : 'chevron_left' }}</span>
+        <button class="collapse-btn" (click)="toggleCollapse()" [title]="isCollapsed ? 'Expand' : 'Collapse'"
+            *ngIf="!isCollapsed">
+            <span class="material-icons">chevron_left</span>
         </button>
     </div>
 
-    <!-- ── New Project Button ───────────────────────────────────── -->
-    <div class="sidebar__new">
-        <button class="new-btn" (click)="onNewProject()" [class.new-btn--icon]="isCollapsed" title="New Project">
+    <!-- ── Create New Menu ───────────────────────────────────────── -->
+    <div class="sidebar__create">
+        <button class="create-btn" (click)="toggleCreateMenu()" [class.create-btn--icon]="isCollapsed"
+            [class.create-btn--expanded]="createMenuExpanded" title="Create New">
             <span class="material-icons">add</span>
-            <span *ngIf="!isCollapsed">New Project</span>
+            <span *ngIf="!isCollapsed">Create New</span>
+            <span class="material-icons create-arrow" *ngIf="!isCollapsed">
+                {{ createMenuExpanded ? 'expand_less' : 'expand_more' }}
+            </span>
         </button>
+
+        <div class="create-menu" *ngIf="createMenuExpanded && !isCollapsed">
+            <button class="create-menu__item" (click)="onNewProject()">
+                <span class="material-icons">folder</span>
+                <span>New Project</span>
+            </button>
+            <button class="create-menu__item" (click)="onNewTeam()">
+                <span class="material-icons">groups</span>
+                <span>New Team</span>
+            </button>
+            <button class="create-menu__item" (click)="onNewMember()">
+                <span class="material-icons">person_add</span>
+                <span>New Member</span>
+            </button>
+        </div>
     </div>
 
     <!-- ── Navigation ──────────────────────────────────────────── -->
@@ -48,14 +72,12 @@
                 <span class="nav-section__label">Projects</span>
                 <span class="material-icons nav-section__arrow" [class.rotated]="!projectsExpanded">expand_more</span>
             </div>
-            <span class="nav-section__label nav-section__label--icon" *ngIf="isCollapsed" title="Projects">
-                <span class="material-icons" style="font-size:14px">folder</span>
-            </span>
-            <ul class="nav-list" *ngIf="projectsExpanded || isCollapsed">
+
+            <ul class="nav-list" *ngIf="projectsExpanded || isCollapsed ">
                 <li *ngFor="let p of recentProjects">
                     <a class="nav-item nav-item--project" [routerLink]="['/app/projects', p.id]"
                         routerLinkActive="nav-item--active" [title]="p.name">
-                        <span class="project-dot" [style.background]="p.color"></span>
+                        <span class="project-dot" *ngIf="!isCollapsed" [style.background]="p.color"></span>
                         <span class="nav-item__label" *ngIf="!isCollapsed">{{ p.name }}</span>
                         <span class="project-status-dot" [class]="'status--' + p.status" *ngIf="!isCollapsed"></span>
                     </a>
@@ -91,7 +113,7 @@
     <!-- ── Spacer ───────────────────────────────────────────────── -->
     <div class="sidebar__spacer"></div>
 
-    <!-- ── Bottom: Settings + Profile ──────────────────────────── -->
+    <!-- ── Bottom: Settings + Organization ──────────────────────── -->
     <div class="sidebar__bottom">
 
         <a class="nav-item" routerLink="/app/settings" routerLinkActive="nav-item--active" title="Settings">
@@ -99,17 +121,30 @@
             <span class="nav-item__label" *ngIf="!isCollapsed">Settings</span>
         </a>
 
-        <div class="sidebar__profile" [class.sidebar__profile--collapsed]="isCollapsed" (click)="onProfileClick()"
-            title="My Profile">
-            <div class="profile-avatar">
-                <span>{{ currentUser.initials }}</span>
-                <div class="profile-avatar__ring"></div>
+        <div class="sidebar__org" [class.sidebar__org--collapsed]="isCollapsed" (click)="onOrgClick()"
+            title="Folio3 Organization">
+            <div class="org-avatar">
+                <span class="material-icons">business</span>
+                <div class="org-avatar__ring"></div>
             </div>
-            <div class="profile-info" *ngIf="!isCollapsed">
-                <span class="profile-info__name">{{ currentUser.name }}</span>
-                <span class="profile-info__role">{{ currentUser.role }}</span>
+            <div class="org-info" *ngIf="!isCollapsed">
+                <span class="org-info__name">Folio3</span>
+                <div class="org-stats">
+                    <span class="org-stat">
+                        <span class="material-icons">groups</span>
+                        {{ orgStats.teams }}
+                    </span>
+                    <span class="org-stat">
+                        <span class="material-icons">people</span>
+                        {{ orgStats.members }}
+                    </span>
+                    <span class="org-stat">
+                        <span class="material-icons">folder</span>
+                        {{ orgStats.projects }}
+                    </span>
+                </div>
             </div>
-            <span class="material-icons profile-chevron" *ngIf="!isCollapsed">unfold_more</span>
+            <span class="material-icons org-chevron" *ngIf="!isCollapsed">unfold_more</span>
         </div>
 
     </div>

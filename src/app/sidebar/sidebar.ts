@@ -11,16 +11,22 @@ interface NavItem {
 }
 
 interface RecentProject {
-  id: string;
+  id: number;
   name: string;
   color: string;
-  status: 'active' | 'completed' | 'hold' | 'new';
+  status: 'active' | 'completed' | 'pending' | 'new';
 }
 
 interface RecentItem {
   icon: string;
   label: string;
   route: string;
+}
+
+interface OrgStats {
+  teams: number;
+  members: number;
+  projects: number;
 }
 
 @Component({
@@ -31,29 +37,58 @@ interface RecentItem {
   styleUrls: ['./sidebar.css'],
 })
 export class Sidebar implements OnInit {
-  isCollapsed = true;
+  isCollapsed = false;
   projectsExpanded = true;
   recentsExpanded = true;
+  createMenuExpanded = false;
 
-  // ── Current user (replace with AuthService later) ────────────
-  currentUser = {
-    name: 'Faizal Hassan',
-    role: 'Manager',
-    initials: 'FH',
-    avatar: null,
+  // ── Organization info ────────────────────────────────────────
+  orgStats: OrgStats = {
+    teams: 8,
+    members: 42,
+    projects: 15
   };
 
-  // ── Main navigation ──────────────────────────────────────────
+  // ── Main navigation (removed Teams and Members) ──────────────
   mainNav: NavItem[] = [
     { icon: 'grid_view', label: 'Dashboard', route: '/app/dashboard' },
     { icon: 'folder_open', label: 'Projects', route: '/app/projects' },
-    { icon: 'task_alt', label: 'My Tasks', route: '/app/tasks', badge: 5 },
-    { icon: 'groups', label: 'Teams', route: '/app/teams' },
-    { icon: 'people', label: 'Members', route: '/app/members' },
+    { icon: 'task_alt', label: 'My Tasks', route: '/app/tasks', badge: 5 }
   ];
 
-  // ── Recent projects (replace with ProjectService later) ──────
-  recentProjects: RecentProject[] = [];
+  // ── Recent projects ──────────────────────────────────────────
+  recentProjects: RecentProject[] = [
+    {
+      id: 1,
+      name: 'Website Redesign',
+      color: '#4CAF50',
+      status: 'active'
+    },
+    {
+      id: 2,
+      name: 'Mobile App UI',
+      color: '#2196F3',
+      status: 'active'
+    },
+    {
+      id: 3,
+      name: 'Backend API Development',
+      color: '#FF9800',
+      status: 'pending'
+    },
+    {
+      id: 4,
+      name: 'Marketing Landing Page',
+      color: '#E91E63',
+      status: 'completed'
+    },
+    {
+      id: 5,
+      name: 'Database Optimization',
+      color: '#9C27B0',
+      status: 'active'
+    }
+  ];
 
   // ── Recent items ─────────────────────────────────────────────
   recentItems: RecentItem[] = [
@@ -70,10 +105,8 @@ export class Sidebar implements OnInit {
       this.isCollapsed = saved === 'true';
     }
 
-    const user = JSON.parse(localStorage.getItem('user')!);
-
-    this.currentUser.name = user.full_name;
     this.getRecentProjects();
+    this.loadOrgStats();
   }
 
   getRecentProjects() {
@@ -86,6 +119,9 @@ export class Sidebar implements OnInit {
             color: project.color,
             status: project.status
           }));
+
+          // Update org stats with actual project count
+          this.orgStats.projects = res.length;
         }
       },
       error: (err: any) => {
@@ -93,16 +129,50 @@ export class Sidebar implements OnInit {
       }
     });
   }
+
+  loadOrgStats() {
+    // TODO: Replace with actual API calls
+    // This is placeholder data - you can update with real service calls
+    this.orgStats = {
+      teams: 8,
+      members: 42,
+      projects: this.orgStats.projects || 15
+    };
+  }
+
   toggleCollapse(): void {
     this.isCollapsed = !this.isCollapsed;
     localStorage.setItem('vorta_sidebar_collapsed', String(this.isCollapsed));
+    if (this.isCollapsed) {
+      this.createMenuExpanded = false;
+    }
   }
 
+  toggleCreateMenu(): void {
+
+    if (this.isCollapsed) {
+      this.isCollapsed = false;
+      localStorage.setItem('vorta_sidebar_collapsed', 'false');
+    }
+
+    this.createMenuExpanded = !this.createMenuExpanded;
+  }
   onNewProject(): void {
     this.router.navigate(['/app/projects/new']);
+    this.createMenuExpanded = false;
   }
 
-  onProfileClick(): void {
-    this.router.navigate(['/app/profile']);
+  onNewTeam(): void {
+    this.router.navigate(['/app/teams/new']);
+    this.createMenuExpanded = false;
+  }
+
+  onNewMember(): void {
+    this.router.navigate(['/app/members/new']);
+    this.createMenuExpanded = false;
+  }
+
+  onOrgClick(): void {
+    // this.router.navigate(['/app/organization']);
   }
 }

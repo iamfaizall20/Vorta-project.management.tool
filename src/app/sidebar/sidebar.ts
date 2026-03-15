@@ -168,7 +168,7 @@ export class Sidebar implements OnInit {
   }
 
   onNewMember(): void {
-    this.router.navigate(['/app/members/new']);
+    this.router.navigate(['/app/member/new']);
     this.createMenuExpanded = false;
   }
 

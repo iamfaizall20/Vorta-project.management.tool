@@ -1,6 +1,4 @@
 <aside class="sidebar" [class.collapsed]="isCollapsed">
-
-    <!-- ── Top: Brand ───────────────────────────────────────────── -->
     <div class="sidebar__brand">
         <button class="collapse-btn collapse-btn--toggle" (click)="toggleCollapse()"
             [title]="isCollapsed ? 'Expand' : 'Collapse'" *ngIf="isCollapsed">
@@ -16,7 +14,6 @@
         </button>
     </div>
 
-    <!-- ── Create New Menu ───────────────────────────────────────── -->
     <div class="sidebar__create">
         <button class="create-btn" (click)="toggleCreateMenu()" [class.create-btn--icon]="isCollapsed"
             [class.create-btn--expanded]="createMenuExpanded" title="Create New">
@@ -43,10 +40,8 @@
         </div>
     </div>
 
-    <!-- ── Navigation ──────────────────────────────────────────── -->
     <nav class="sidebar__nav">
 
-        <!-- Main -->
         <div class="nav-section">
             <span class="nav-section__label" *ngIf="!isCollapsed">Main</span>
             <ul class="nav-list">
@@ -66,7 +61,6 @@
             </ul>
         </div>
 
-        <!-- Projects -->
         <div class="nav-section">
             <div class="nav-section__header" *ngIf="!isCollapsed" (click)="projectsExpanded = !projectsExpanded">
                 <span class="nav-section__label">Projects</span>
@@ -92,7 +86,6 @@
             </ul>
         </div>
 
-        <!-- Recents -->
         <div class="nav-section" *ngIf="!isCollapsed">
             <div class="nav-section__header" (click)="recentsExpanded = !recentsExpanded">
                 <span class="nav-section__label">Recents</span>
@@ -110,10 +103,8 @@
 
     </nav>
 
-    <!-- ── Spacer ───────────────────────────────────────────────── -->
     <div class="sidebar__spacer"></div>
 
-    <!-- ── Bottom: Settings + Organization ──────────────────────── -->
     <div class="sidebar__bottom">
 
         <a class="nav-item" routerLink="/app/settings" routerLinkActive="nav-item--active" title="Settings">

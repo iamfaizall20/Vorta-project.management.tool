@@ -1,0 +1,240 @@
+<div class="new-member-container">
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+
+        <!-- Left: Form Section -->
+        <div class="form-section">
+            <div class="form-header">
+                <h1>Add New Member</h1>
+                <p>Create a new member account for your organization</p>
+            </div>
+
+            <!-- Progress Indicator -->
+            <div class="progress-indicator" *ngIf="isSubmitting">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <p class="progress-text">Creating member account...</p>
+            </div>
+
+            <!-- Form -->
+            <form [formGroup]="memberForm" (ngSubmit)="onSubmit()" *ngIf="!isSubmitting" class="member-form">
+
+                <!-- Row 1: Full Name & Email -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Full Name <span class="required">*</span>
+                        </label>
+                        <input type="text" class="form-input"
+                            [class.error]="memberForm.get('full_name')?.invalid && memberForm.get('full_name')?.touched"
+                            formControlName="full_name" placeholder="Enter full name" />
+                        <div class="error-message"
+                            *ngIf="memberForm.get('full_name')?.invalid && memberForm.get('full_name')?.touched">
+                            <span class="material-icons">error</span>
+                            <span *ngIf="memberForm.get('full_name')?.errors?.['required']">Full name is required</span>
+                            <span *ngIf="memberForm.get('full_name')?.errors?.['minlength']">Name must be at least 2
+                                characters</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Email Address <span class="required">*</span>
+                        </label>
+                        <input type="email" class="form-input"
+                            [class.error]="memberForm.get('email')?.invalid && memberForm.get('email')?.touched"
+                            formControlName="email" placeholder="Enter email address" />
+                        <div class="error-message"
+                            *ngIf="memberForm.get('email')?.invalid && memberForm.get('email')?.touched">
+                            <span class="material-icons">error</span>
+                            <span *ngIf="memberForm.get('email')?.errors?.['required']">Email is required</span>
+                            <span *ngIf="memberForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Username & Password -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Username <span class="required">*</span>
+                        </label>
+                        <input type="text" class="form-input"
+                            [class.error]="memberForm.get('username')?.invalid && memberForm.get('username')?.touched"
+                            formControlName="username" placeholder="Enter username" />
+                        <div class="error-message"
+                            *ngIf="memberForm.get('username')?.invalid && memberForm.get('username')?.touched">
+                            <span class="material-icons">error</span>
+                            <span *ngIf="memberForm.get('username')?.errors?.['required']">Username is required</span>
+                            <span *ngIf="memberForm.get('username')?.errors?.['minlength']">Username must be at least 3
+                                characters</span>
+                            <span *ngIf="memberForm.get('username')?.errors?.['pattern']">Username can only contain
+                                letters, numbers, and underscores</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Password <span class="required">*</span>
+                        </label>
+                        <div class="password-wrapper">
+                            <input [type]="showPassword ? 'text' : 'password'" class="form-input"
+                                [class.error]="memberForm.get('password')?.invalid && memberForm.get('password')?.touched"
+                                formControlName="password" placeholder="Enter password" />
+                            <button type="button" class="password-toggle" (click)="togglePassword()"
+                                [title]="showPassword ? 'Hide password' : 'Show password'">
+                                <span class="material-icons">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                            </button>
+                        </div>
+                        <div class="error-message"
+                            *ngIf="memberForm.get('password')?.invalid && memberForm.get('password')?.touched">
+                            <span class="material-icons">error</span>
+                            <span *ngIf="memberForm.get('password')?.errors?.['required']">Password is required</span>
+                            <span *ngIf="memberForm.get('password')?.errors?.['minlength']">Password must be at least 6
+                                characters</span>
+                        </div>
+                        <div class="password-strength" *ngIf="memberForm.get('password')?.value">
+                            <div class="strength-bar">
+                                <div class="strength-fill" [class]="getPasswordStrength()"></div>
+                            </div>
+                            <span class="strength-text">{{ getPasswordStrengthText() }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Role -->
+                <div class="form-group">
+                    <label class="form-label">
+                        Role <span class="required">*</span>
+                    </label>
+                    <div class="role-selector">
+                        <div class="role-option" *ngFor="let role of roles"
+                            [class.selected]="memberForm.get('role')?.value === role.value"
+                            (click)="selectRole(role.value)">
+                            <div class="role-icon">
+                                <span class="material-icons">{{ role.icon }}</span>
+                            </div>
+                            <div class="role-info">
+                                <span class="role-name">{{ role.label }}</span>
+                            </div>
+                            <div class="role-check">
+                                <span class="material-icons">{{ memberForm.get('role')?.value === role.value ?
+                                    'radio_button_checked' : 'radio_button_unchecked' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" (click)="onCancel()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" [disabled]="memberForm.invalid || isSubmitting">
+                        Add Member
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Right: Live Preview -->
+        <div class="preview-section">
+            <div class="preview-card">
+                <div class="preview-header">
+                    <h3>Live Preview</h3>
+                    <span class="preview-badge">Real-time</span>
+                </div>
+
+                <div class="preview-content">
+                    <!-- Avatar -->
+                    <div class="preview-avatar">
+                        <div class="avatar-circle">
+                            <span class="avatar-initials">{{ getInitials() }}</span>
+                        </div>
+                    </div>
+
+                    <!-- User Details -->
+                    <div class="preview-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Username</span>
+                            <span class="detail-value">{{ memberForm.get('username')?.value || 'Not set' }}</span>
+                        </div>
+
+                        <div class="detail-item">
+                            <span class="detail-label">Full Name</span>
+                            <span class="detail-value">{{ memberForm.get('full_name')?.value || 'Not set' }}</span>
+                        </div>
+
+                        <div class="detail-item">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value">{{ memberForm.get('email')?.value || 'Not set' }}</span>
+                        </div>
+
+                        <div class="detail-item">
+                            <span class="detail-label">Password</span>
+                            <span class="detail-value password-preview">
+                                <span class="dots" *ngIf="memberForm.get('password')?.value">••••••••</span>
+                                <span *ngIf="!memberForm.get('password')?.value">Not set</span>
+                                <span class="strength-badge" [class]="getPasswordStrength()"
+                                    *ngIf="memberForm.get('password')?.value">
+                                    {{ getPasswordStrengthText() }}
+                                </span>
+                            </span>
+                        </div>
+
+                        <div class="detail-item">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value role-badge" [class]="'role-' + memberForm.get('role')?.value">
+                                <span class="material-icons">{{ getRoleIcon() }}</span>
+                                {{ getRoleLabel() }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal-overlay" *ngIf="showSuccessModal" (click)="closeSuccessModal()">
+        <div class="modal-content success-modal" (click)="$event.stopPropagation()">
+            <div class="success-icon">
+                <span class="material-icons">check_circle</span>
+            </div>
+            <h2>Member Added Successfully!</h2>
+            <p>{{ successMessage }}</p>
+
+            <div class="user-id-card">
+                <div class="user-id-label">Generated User ID</div>
+                <div class="user-id-value">{{ generatedUserId }}</div>
+                <div class="user-id-reminder">
+                    <span class="material-icons">info</span>
+                    <span>Please remember this User ID for future reference</span>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" (click)="goToDashboard()">
+                Go to Dashboard
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal-overlay" *ngIf="showErrorModal" (click)="closeErrorModal()">
+        <div class="modal-content error-modal" (click)="$event.stopPropagation()">
+            <div class="error-icon">
+                <span class="material-icons">error</span>
+            </div>
+            <h2>Something Went Wrong</h2>
+            <p>{{ errorMessage }}</p>
+            <button class="btn btn-secondary" (click)="closeErrorModal()">
+                Close
+            </button>
+        </div>
+    </div>
+
+</div>

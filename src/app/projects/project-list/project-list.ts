@@ -2,9 +2,29 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { TitleCasePipe, SlicePipe, CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { Project } from '../project-detail/project-detail';
 import { HttpClientModule } from '@angular/common/http';
 import { ProjectsService } from '../../services/projects-service';
+
+// Project interface with new API fields
+export interface Project {
+  id: string | number;
+  name: string;
+  description: string;
+  status: 'new' | 'active' | 'hold' | 'completed';
+  color: string;
+  priority: 'low' | 'medium' | 'mid' | 'high' | 'critical';
+  dueDate: string;
+
+  // New API fields
+  totalMembers?: number;
+  totalTeams?: number;
+  totalTasks?: number;
+  completedTasks?: number;
+
+  // Legacy fields - kept for backwards compatibility
+  members?: any[];
+  tasks?: any[];
+}
 
 @Component({
   selector: 'app-project-list',
@@ -22,7 +42,7 @@ export class ProjectList implements OnInit {
   activeFilter = 'all';
   viewMode: 'grid' | 'list' = 'grid';
   sortBy: 'name' | 'status' | 'progress' | 'dueDate' = 'name';
-  isLoading = true; // Added loading state
+  isLoading = true;
 
   // ── Context menu ───────────────────────────────────────────
   menuProject: Project | null = null;
@@ -41,6 +61,14 @@ export class ProjectList implements OnInit {
   constructor(private router: Router, private projectService: ProjectsService) { }
 
   ngOnInit(): void {
+    // Check if organization_id exists in localStorage
+    const organizationId = localStorage.getItem('organization_id');
+    if (!organizationId) {
+      console.error('No organization_id found in localStorage');
+      this.isLoading = false;
+      return;
+    }
+
     this.loadProjects();
   }
 
@@ -49,34 +77,42 @@ export class ProjectList implements OnInit {
     this.isLoading = true;
     this.projectService.projectDetails().subscribe({
       next: (data: any[]) => {
-        // Map API data to match the UI expectations (adding initials etc.)
+        // Map API data directly - no need to generate mock data
         this.projects = data.map(project => ({
-          ...project,
-          members: project.members.map((m: any) => ({
-            ...m,
-            initials: this.getInitials(m.name),
-            // Default color if avatar/color is missing from API
-            color: m.avatar || '#5B5BD6'
-          }))
+          id: project.id,
+          name: project.name,
+          description: project.description || 'No description provided.',
+          status: project.status,
+          color: project.color,
+          priority: project.priority,
+          dueDate: project.dueDate,
+          // Store API counts directly
+          totalMembers: project.totalMembers || 0,
+          totalTeams: project.totalTeams || 0,
+          totalTasks: project.totalTasks || 0,
+          completedTasks: project.completedTasks || 0,
+          // Keep empty arrays for backwards compatibility with old helper methods
+          members: [],
+          tasks: []
         }));
-        console.log(this.projects);
+
+        console.log('Loaded projects:', this.projects);
         this.isLoading = false;
-        // Optionally cache to localStorage if you still want offline fallback
+
+        // Cache to localStorage for offline fallback
         localStorage.setItem('vorta_projects', JSON.stringify(this.projects));
       },
       error: (err) => {
         console.error('Error fetching projects:', err);
         this.isLoading = false;
+
         // Fallback to local storage if API fails
         const stored = localStorage.getItem('vorta_projects');
-        if (stored) this.projects = JSON.parse(stored);
+        if (stored) {
+          this.projects = JSON.parse(stored);
+        }
       }
     });
-  }
-
-  // Helper to generate initials from name for the UI avatars
-  private getInitials(name: string): string {
-    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : '??';
   }
 
   // ── Computed ───────────────────────────────────────────────
@@ -122,16 +158,39 @@ export class ProjectList implements OnInit {
   }
 
   // ── Helpers ────────────────────────────────────────────────
-  getProgress(p: Project): number {
-    if (!p.tasks || p.tasks.length === 0) return 0;
-    // The API tasks are simplified; we check if status exists or just count total
-    // Assuming status logic remains same as mock for now
-    const done = p.tasks.filter((t: any) => t.status === 'done').length;
-    return Math.round((done / p.tasks.length) * 100);
+
+  // Calculate progress directly from API counts
+  getProgressFromAPI(p: Project): number {
+    const totalTasks = p.totalTasks ?? 0;
+    const completedTasks = p.completedTasks ?? 0;
+
+    if (totalTasks === 0) return 0;
+    return Math.round((completedTasks / totalTasks) * 100);
   }
 
+  // Legacy method - kept for backwards compatibility but uses API counts now
+  getProgress(p: Project): number {
+    return this.getProgressFromAPI(p);
+  }
+
+  // Legacy method - kept for backwards compatibility but uses API counts now
   getCompletedTasks(p: Project): number {
-    return (p.tasks || []).filter((t: any) => t.status === 'done').length;
+    return p.completedTasks ?? 0;
+  }
+
+  // Safe getter for total tasks
+  getTotalTasks(p: Project): number {
+    return p.totalTasks ?? 0;
+  }
+
+  // Safe getter for total members
+  getTotalMembers(p: Project): number {
+    return p.totalMembers ?? 0;
+  }
+
+  // Safe getter for total teams
+  getTotalTeams(p: Project): number {
+    return p.totalTeams ?? 0;
   }
 
   getPriorityIcon(priority: string): string {
@@ -180,8 +239,18 @@ export class ProjectList implements OnInit {
 
   onDeleteProject(p: Project): void {
     if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
-    // In a real app, you would call projectService.delete(p.id).subscribe(...)
-    this.projects = this.projects.filter(proj => proj.id !== p.id);
+
+    // Call the delete service
+    this.projectService.deleteProject(Number(p.id)).subscribe({
+      next: () => {
+        this.projects = this.projects.filter(proj => proj.id !== p.id);
+        localStorage.setItem('vorta_projects', JSON.stringify(this.projects));
+      },
+      error: (err) => {
+        console.error('Error deleting project:', err);
+        alert('Failed to delete project. Please try again.');
+      }
+    });
   }
 
   // ── Context menu ───────────────────────────────────────────

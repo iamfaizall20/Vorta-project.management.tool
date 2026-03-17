@@ -33,7 +33,7 @@
                 <span class="material-icons">groups</span>
                 <span>New Team</span>
             </button>
-            <button class="create-menu__item" (click)="onNewMember()">
+            <button class="create-menu__item" *ngIf="isUserAdmin" (click)="onNewMember()">
                 <span class="material-icons">person_add</span>
                 <span>New Member</span>
             </button>

@@ -1,14 +1,8 @@
 <div class="project-detail" *ngIf="project; else loading">
 
-    <!-- ── Project colour accent bar ─────────────────────────── -->
-    <!-- <div class="project-accent-bar" [style.background]="project.color"></div> -->
-
     <!-- ── Topbar ─────────────────────────────────────────────── -->
     <header class="topbar">
         <div class="topbar__left">
-            <!-- <button class="back-btn" (click)="goBack()">
-                <span class="material-icons">arrow_back</span>
-            </button> -->
             <nav class="breadcrumb">
                 <a class="breadcrumb__item" routerLink="/app">Vorta</a>
                 <span class="material-icons breadcrumb__sep">chevron_right</span>
@@ -66,7 +60,7 @@
                             [style.background]="project.color"></div>
                     </div>
                     <div class="progress-section__counts">
-                        <span>{{ completedCount }} of {{ project.tasks.length }} tasks completed</span>
+                        <span>{{ completedCount }} of {{ project.stats.totalTasks }} tasks completed</span>
                         <span *ngIf="project.dueDate" [class.overdue]="isOverdue(project.dueDate)">
                             <span class="material-icons" style="font-size:13px;vertical-align:middle">schedule</span>
                             {{ formatDate(project.dueDate) }}
@@ -75,23 +69,29 @@
                 </div>
             </div>
 
+            <!-- Team Tabs -->
+            <div class="team-tabs">
+                <button class="team-tab" [class.team-tab--active]="selectedTeamId === 'all'"
+                    (click)="selectTeam('all')">
+                    <span class="material-icons">workspaces</span>
+                    All Teams
+                    <span class="team-tab__count">{{ project.stats.totalTasks }}</span>
+                </button>
+                <button class="team-tab" *ngFor="let team of project.teams"
+                    [class.team-tab--active]="selectedTeamId === team.teamId" (click)="selectTeam(team.teamId)">
+                    <span class="material-icons">group</span>
+                    {{ team.teamName }}
+                    <span class="team-tab__count">{{ team.tasks.length }}</span>
+                </button>
+            </div>
+
             <!-- Task Board Header -->
             <div class="board-header">
                 <div class="board-header__left">
-                    <h2 class="board-title">Task Board</h2>
-                    <span class="board-count">{{ project.tasks.length }}</span>
+                    <h2 class="board-title">{{ currentTeamName }}</h2>
+                    <span class="board-count">{{ currentTasks.length }} tasks</span>
                 </div>
                 <div class="board-header__right">
-                    <div class="view-toggle">
-                        <button class="view-btn" [class.view-btn--active]="boardView === 'kanban'"
-                            (click)="boardView = 'kanban'" title="Kanban">
-                            <span class="material-icons">view_kanban</span>
-                        </button>
-                        <button class="view-btn" [class.view-btn--active]="boardView === 'list'"
-                            (click)="boardView = 'list'" title="List">
-                            <span class="material-icons">view_list</span>
-                        </button>
-                    </div>
                     <button class="btn-primary btn-sm" (click)="openCreateTask()">
                         <span class="material-icons">add</span>
                         Add Task
@@ -100,7 +100,7 @@
             </div>
 
             <!-- ── KANBAN BOARD ──────────────────────────────────── -->
-            <div class="kanban-board" *ngIf="boardView === 'kanban'">
+            <div class="kanban-board">
                 <div class="kanban-col" *ngFor="let col of taskColumns">
                     <div class="kanban-col__head" [style.border-top-color]="col.color">
                         <div class="kanban-col__title-wrap">
@@ -119,13 +119,13 @@
                             (click)="openTaskDetail(t)">
 
                             <div class="task-card__top">
-                                <span class="task-card__title">{{ t.title }}</span>
+                                <span class="task-card__title">{{ t.title || t.description }}</span>
                                 <button class="task-card__menu" (click)="$event.stopPropagation(); openTaskMenu(t)">
                                     <span class="material-icons">more_horiz</span>
                                 </button>
                             </div>
 
-                            <p class="task-card__desc" *ngIf="t.description">{{ t.description }}</p>
+                            <p class="task-card__desc" *ngIf="t.description && t.title">{{ t.description }}</p>
 
                             <div class="task-card__footer">
                                 <div class="task-card__assignee" *ngIf="t.assignee">
@@ -146,7 +146,7 @@
                                 </div>
                             </div>
 
-                            <!-- Status change buttons (member action) -->
+                            <!-- Status change buttons -->
                             <div class="task-card__actions" (click)="$event.stopPropagation()">
                                 <button class="status-btn" *ngFor="let s of quickStatuses"
                                     [class.status-btn--active]="t.status === s.value" [style.--btn-color]="s.color"
@@ -167,83 +167,10 @@
                 </div>
             </div>
 
-            <!-- ── LIST VIEW ─────────────────────────────────────── -->
-            <div class="list-view" *ngIf="boardView === 'list'">
-                <div class="list-header-row">
-                    <span class="list-col list-col--title">Task</span>
-                    <span class="list-col">Assignee</span>
-                    <span class="list-col">Priority</span>
-                    <span class="list-col">Status</span>
-                    <span class="list-col">Due</span>
-                    <span class="list-col"></span>
-                </div>
-                <div class="list-task-row" *ngFor="let t of project.tasks"
-                    [class.list-task-row--done]="t.status === 'done'" (click)="openTaskDetail(t)">
-                    <span class="list-col list-col--title">
-                        <span class="list-task-check" [class.list-task-check--done]="t.status === 'done'"
-                            (click)="$event.stopPropagation(); quickToggleDone(t)">
-                            <span class="material-icons" *ngIf="t.status === 'done'">check</span>
-                        </span>
-                        {{ t.title }}
-                    </span>
-                    <span class="list-col">
-                        <div class="assignee-avatar assignee-avatar--sm" *ngIf="t.assignee"
-                            [style.background]="t.assignee.color" [title]="t.assignee.name">
-                            {{ t.assignee.initials }}
-                        </div>
-                        <span class="list-unassigned" *ngIf="!t.assignee">—</span>
-                    </span>
-                    <span class="list-col">
-                        <span class="task-priority-badge" [class]="'task-priority--' + t.priority">{{ t.priority
-                            }}</span>
-                    </span>
-                    <span class="list-col">
-                        <span class="status-chip" [class]="'status-chip--' + t.status">{{ t.status | titlecase }}</span>
-                    </span>
-                    <span class="list-col list-due-col" [class.overdue]="t.dueDate && isOverdue(t.dueDate)">
-                        {{ t.dueDate ? formatDate(t.dueDate) : '—' }}
-                    </span>
-                    <span class="list-col list-col--actions" (click)="$event.stopPropagation()">
-                        <button class="icon-btn-sm" (click)="openTaskDetail(t)" title="View">
-                            <span class="material-icons">open_in_new</span>
-                        </button>
-                    </span>
-                </div>
-                <div class="list-empty" *ngIf="project.tasks.length === 0">
-                    <span class="material-icons">task_alt</span>
-                    <span>No tasks yet — add your first one</span>
-                    <button class="btn-primary btn-sm" (click)="openCreateTask()">
-                        <span class="material-icons">add</span> Add Task
-                    </button>
-                </div>
-            </div>
-
         </main>
 
         <!-- ── RIGHT: Sidebar panels ───────────────────────────── -->
         <aside class="detail-sidebar">
-
-            <!-- Team -->
-            <div class="panel">
-                <div class="panel__head">
-                    <h3 class="panel__title">Team</h3>
-                    <span class="panel__count">{{ project.members.length }}</span>
-                </div>
-                <div class="panel__body">
-                    <div class="team-member" *ngFor="let m of project.members">
-                        <div class="team-member__avatar" [style.background]="m.color">{{ m.initials }}</div>
-                        <div class="team-member__info">
-                            <span class="team-member__name">{{ m.name }}</span>
-                            <span class="team-member__tasks">{{ getMemberTaskCount(m.id) }} tasks assigned</span>
-                        </div>
-                        <span class="team-member__role-badge">{{ m.role }}</span>
-                    </div>
-                    <div class="panel__empty" *ngIf="project.members.length === 0">
-                        <span class="material-icons">group_add</span>
-                        No members yet
-                    </div>
-                </div>
-            </div>
 
             <!-- Stats -->
             <div class="panel">
@@ -259,6 +186,28 @@
                             <span class="stat-mini__value">{{ s.value }}</span>
                             <span class="stat-mini__label">{{ s.label }}</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team -->
+            <div class="panel">
+                <div class="panel__head">
+                    <h3 class="panel__title">Team Members</h3>
+                    <span class="panel__count">{{ project.members.length }}</span>
+                </div>
+                <div class="panel__body">
+                    <div class="team-member" *ngFor="let m of project.members">
+                        <div class="team-member__avatar" [style.background]="m.color">{{ m.initials }}</div>
+                        <div class="team-member__info">
+                            <span class="team-member__name">{{ m.name }}</span>
+                            <span class="team-member__tasks">{{ getMemberTaskCount(m.id) }} tasks</span>
+                        </div>
+                        <span class="team-member__role-badge">{{ m.role }}</span>
+                    </div>
+                    <div class="panel__empty" *ngIf="project.members.length === 0">
+                        <span class="material-icons">group_add</span>
+                        No members yet
                     </div>
                 </div>
             </div>
@@ -329,10 +278,11 @@
                 selectedTask.priority }}</span>
             <button class="icon-btn-sm" (click)="selectedTask = null"><span class="material-icons">close</span></button>
         </div>
-        <h2 class="task-drawer__title">{{ selectedTask.title }}</h2>
+        <h2 class="task-drawer__title">{{ selectedTask.title || selectedTask.description }}</h2>
     </div>
     <div class="task-drawer__body">
-        <p class="task-drawer__desc" *ngIf="selectedTask.description">{{ selectedTask.description }}</p>
+        <p class="task-drawer__desc" *ngIf="selectedTask.description && selectedTask.title">{{ selectedTask.description
+            }}</p>
         <p class="task-drawer__desc task-drawer__desc--empty" *ngIf="!selectedTask.description">No description added.
         </p>
 

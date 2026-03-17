@@ -41,6 +41,7 @@ export class Sidebar implements OnInit {
   projectsExpanded = true;
   recentsExpanded = true;
   createMenuExpanded = false;
+  isUserAdmin = false;
 
   // ── Organization info ────────────────────────────────────────
   orgStats: OrgStats = {
@@ -104,9 +105,16 @@ export class Sidebar implements OnInit {
     if (saved !== null) {
       this.isCollapsed = saved === 'true';
     }
-
+    this.isUserAdmin = this.checkUserRole;
     this.getRecentProjects();
     this.loadOrgStats();
+  }
+
+  get checkUserRole() {
+    const user = JSON.parse(localStorage.getItem('user')!);
+
+    return (user?.role === 'admin') ? true : false;
+
   }
 
   getRecentProjects() {

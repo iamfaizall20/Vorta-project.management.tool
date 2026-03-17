@@ -7,36 +7,52 @@ import { TaskService } from '../../services/task-service';
 
 // ───────────────── Interfaces ─────────────────
 export interface Member {
-  id: string;
+  id: string | number;
   name: string;
   initials: string;
   color: string;
-  role: string;
+  role?: string;
 }
 
 export interface Task {
   id: string;
   projectId: string;
-  title: string;
+  title?: string;
   description: string;
   assignee: Member | null;
   priority: 'low' | 'medium' | 'high' | 'critical';
   status: 'todo' | 'inprogress' | 'done' | 'blocked';
   dueDate: string;
-  createdAt: string;
+  createdAt?: string;
+  teamId?: string;
+}
+
+export interface Team {
+  teamId: string;
+  teamName: string;
+  tasks: Task[];
+}
+
+export interface ProjectStats {
+  totalTasks: number;
+  todo: number;
+  inProgress: number;
+  done: number;
+  completedTasks: number;
 }
 
 export interface Project {
-  id: string;
+  id: string | number;
   name: string;
   description: string;
-  status: 'new' | 'active' | 'hold' | 'completed' | 'cancelled';
+  status: 'new' | 'active' | 'hold' | 'completed';
   color: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: 'low' | 'medium' | 'mid' | 'high' | 'critical';
   dueDate: string;
+  createdAt?: string;
   members: Member[];
-  tasks: Task[];
-  createdAt: string;
+  teams: Team[];
+  stats: ProjectStats;
 }
 
 interface TaskDraft {
@@ -69,12 +85,14 @@ export class ProjectDetail implements OnInit {
 
   project: Project | null = null;
   isLoading = true;
-  boardView: 'kanban' | 'list' = 'kanban';
   confirmDelete = false;
   showCreateTask = false;
   selectedTask: Task | null = null;
   taskCreating = false;
   today = new Date().toISOString().split('T')[0];
+
+  // Team tabs
+  selectedTeamId: string = 'all';
 
   taskDraft: TaskDraft = {
     title: '',
@@ -117,90 +135,176 @@ export class ProjectDetail implements OnInit {
 
   // ───────────────── Init ─────────────────
   ngOnInit(): void {
+    console.log('🚀 ProjectDetail component initialized');
     const id = this.route.snapshot.paramMap.get('id');
+    const organizationId = localStorage.getItem('organization_id');
+
+    console.log('📍 Project ID from route:', id);
+    console.log('🏢 Organization ID from localStorage:', organizationId);
+
+    if (!organizationId) {
+      console.error('❌ No organization_id found in localStorage');
+      this.isLoading = false;
+      this.router.navigate(['/app/projects']);
+      return;
+    }
 
     if (id) {
       this.fetchProjectData(id);
-      this.fetchTasks(Number(id));
+    } else {
+      console.error('❌ No project ID in route params');
     }
   }
 
   // ───────────────── Fetch Project ─────────────────
   fetchProjectData(id: string): void {
     this.isLoading = true;
+    console.log('🔍 Fetching project data for ID:', id);
 
     this.projectService.projectDetails(id).subscribe({
       next: (data) => {
+        console.log('✅ Project data received:', data);
+        console.log('📊 Stats:', data.stats);
+        console.log('👥 Members count:', data.members?.length || 0);
+        console.log('🏢 Teams count:', data.teams?.length || 0);
+
+        // Map members with initials and colors
+        const mappedMembers: Member[] = (data.members || []).map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          initials: this.getInitials(m.name),
+          color: this.generateColorFromName(m.name),
+          role: m.role || 'Member'
+        }));
+
+        // Map teams and their tasks
+        const mappedTeams: Team[] = (data.teams || []).map((team: any) => {
+          const teamTasks: Task[] = (team.tasks || []).map((t: any) => {
+            // Find assignee from members or use assignee_name from API
+            let assignee: Member | null = null;
+
+            if (t.assignee_id) {
+              assignee = mappedMembers.find(m => m.id === t.assignee_id) || null;
+
+              // If not found in members, create from assignee_name
+              if (!assignee && t.assignee_name) {
+                assignee = {
+                  id: t.assignee_id,
+                  name: t.assignee_name,
+                  initials: this.getInitials(t.assignee_name),
+                  color: this.generateColorFromName(t.assignee_name),
+                  role: 'Member'
+                };
+              }
+            }
+
+            return {
+              id: t.id,
+              projectId: String(data.id),
+              title: t.title || t.description,
+              description: t.description,
+              priority: t.priority,
+              status: this.mapBackendStatus(t.status),
+              dueDate: t.dueDate,
+              createdAt: t.createdAt || '',
+              teamId: team.teamId,
+              assignee: assignee
+            };
+          });
+
+          return {
+            teamId: team.teamId,
+            teamName: team.teamName,
+            tasks: teamTasks
+          };
+        });
 
         this.project = {
-          ...data,
-          tasks: [],
-          members: data.members.map((m: any) => ({
-            ...m,
-            initials: this.getInitials(m.name),
-            color: m.avatar || '#5B5BD6'
-          }))
+          id: data.id,
+          name: data.name,
+          description: data.description || '',
+          status: data.status,
+          color: data.color,
+          priority: data.priority,
+          dueDate: data.dueDate || '',
+          createdAt: data.createdAt || '',
+
+          members: mappedMembers,
+          teams: mappedTeams,
+          stats: data.stats || {
+            totalTasks: 0,
+            todo: 0,
+            inProgress: 0,
+            done: 0,
+            completedTasks: 0
+          }
         };
+
+        console.log('✅ Project object created:', this.project);
+        console.log('📋 Mapped members:', mappedMembers);
+        console.log('🏢 Mapped teams:', mappedTeams);
+
+        // Select first team by default if exists
+        if (this.project.teams.length > 0) {
+          this.selectedTeamId = 'all';
+          console.log('✅ Selected team: all');
+        } else {
+          console.log('⚠️ No teams found');
+        }
 
         this.buildActivity();
         this.isLoading = false;
+        console.log('✅ Project loading complete');
       },
       error: (err) => {
-        console.error('API Error:', err);
+        console.error('❌ API Error:', err);
+        console.error('❌ Error details:', {
+          status: err.status,
+          statusText: err.statusText,
+          message: err.message,
+          error: err.error
+        });
         this.isLoading = false;
+        alert('Failed to load project details');
+        this.router.navigate(['/app/projects']);
       }
     });
-  }
-
-  // ───────────────── Fetch Tasks ─────────────────
-  fetchTasks(projectId: number): void {
-
-    this.taskService.getTasks(projectId).subscribe({
-
-      next: (res: any) => {
-
-        if (!this.project) return;
-
-        const mappedTasks: Task[] = res.tasks.map((t: any) => ({
-          id: String(t.task_id),
-          projectId: String(projectId),
-          title: t.title,
-          description: t.description,
-          priority: t.priority,
-          status: this.mapBackendStatus(t.status),
-          dueDate: t.due_date,
-          createdAt: t.created_at,
-          assignee: null
-        }));
-
-        this.project.tasks = mappedTasks;
-      },
-
-      error: (err) => {
-        console.error('Fetch Tasks Error:', err);
-      }
-
-    });
-
   }
 
   private mapBackendStatus(status: string): Task['status'] {
-
-    const map: Record<string, Task['status']> = {
-      pending: 'todo',
-      todo: 'todo',
-      inprogress: 'inprogress',
-      done: 'done',
-      blocked: 'blocked'
+    const statusMap: Record<string, Task['status']> = {
+      'todo': 'todo',
+      'pending': 'todo',
+      'inprogress': 'inprogress',
+      'in_progress': 'inprogress',
+      'inProgress': 'inprogress',
+      'done': 'done',
+      'completed': 'done',
+      'blocked': 'blocked'
     };
-
-    return map[status] ?? 'todo';
+    return statusMap[status] || 'todo';
   }
 
   private getInitials(name: string): string {
     return name
       ? name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
       : '??';
+  }
+
+  // Generate a consistent color from a name
+  private generateColorFromName(name: string): string {
+    const colors = [
+      '#5B5BD6', '#30A46C', '#F59E0B', '#E93D82',
+      '#0091FF', '#8E4EC6', '#FF6B6B', '#4ECDC4',
+      '#45B7D1', '#F38181', '#95E1D3', '#FFA07A'
+    ];
+
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    return colors[Math.abs(hash) % colors.length];
   }
 
   buildActivity(): void {
@@ -217,31 +321,96 @@ export class ProjectDetail implements OnInit {
     ];
   }
 
+  // ───────────────── Team Selection ─────────────────
+  selectTeam(teamId: string): void {
+    this.selectedTeamId = teamId;
+  }
+
+  get currentTasks(): Task[] {
+    if (!this.project) return [];
+
+    if (this.selectedTeamId === 'all') {
+      // Return all tasks from all teams
+      return this.project.teams.flatMap(team => team.tasks);
+    }
+
+    // Return tasks from selected team
+    const team = this.project.teams.find(t => t.teamId === this.selectedTeamId);
+    return team ? team.tasks : [];
+  }
+
+  get currentTeamName(): string {
+    if (this.selectedTeamId === 'all') return 'All Teams';
+    const team = this.project?.teams.find(t => t.teamId === this.selectedTeamId);
+    return team ? team.teamName : '';
+  }
+
   // ───────────────── Computed ─────────────────
   get completedCount(): number {
-    return this.project?.tasks.filter(t => t.status === 'done').length ?? 0;
+    return this.project?.stats.completedTasks ?? 0;
   }
 
   getProgress(): number {
-    if (!this.project || this.project.tasks.length === 0) return 0;
-    return Math.round((this.completedCount / this.project.tasks.length) * 100);
+    if (!this.project || this.project.stats.totalTasks === 0) return 0;
+    return Math.round((this.project.stats.completedTasks / this.project.stats.totalTasks) * 100);
   }
 
   getTasksByStatus(status: string): Task[] {
-    return this.project?.tasks.filter(t => t.status === status) ?? [];
+    return this.currentTasks.filter(t => t.status === status);
   }
 
-  getMemberTaskCount(memberId: string): number {
-    return this.project?.tasks.filter(t => t.assignee?.id === memberId).length ?? 0;
+  getMemberTaskCount(memberId: string | number): number {
+    if (!this.project) return 0;
+    const allTasks = this.project.teams.flatMap(team => team.tasks);
+    return allTasks.filter(t => t.assignee?.id === memberId).length;
   }
 
   get projectStats() {
+    if (!this.project) return [];
+
     return [
-      { icon: 'task_alt', label: 'Total tasks', value: this.project?.tasks.length ?? 0, color: '#5B5BD6', bg: 'rgba(91,91,214,0.1)' },
-      { icon: 'check_circle', label: 'Completed', value: this.completedCount, color: '#30A46C', bg: 'rgba(48,164,108,0.1)' },
-      { icon: 'autorenew', label: 'In progress', value: this.getTasksByStatus('inprogress').length, color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' },
-      { icon: 'block', label: 'Blocked', value: this.getTasksByStatus('blocked').length, color: '#EF4444', bg: 'rgba(239,68,68,0.1)' },
-      { icon: 'groups', label: 'Team members', value: this.project?.members.length ?? 0, color: '#EC4899', bg: 'rgba(236,72,153,0.1)' },
+      {
+        icon: 'task_alt',
+        label: 'Total tasks',
+        value: this.project.stats.totalTasks,
+        color: '#5B5BD6',
+        bg: 'rgba(91,91,214,0.1)'
+      },
+      {
+        icon: 'check_circle',
+        label: 'Completed',
+        value: this.project.stats.completedTasks,
+        color: '#30A46C',
+        bg: 'rgba(48,164,108,0.1)'
+      },
+      {
+        icon: 'autorenew',
+        label: 'In progress',
+        value: this.project.stats.inProgress,
+        color: '#F59E0B',
+        bg: 'rgba(245,158,11,0.1)'
+      },
+      {
+        icon: 'radio_button_unchecked',
+        label: 'To Do',
+        value: this.project.stats.todo,
+        color: '#A1A1AA',
+        bg: 'rgba(161,161,170,0.1)'
+      },
+      {
+        icon: 'groups',
+        label: 'Team members',
+        value: this.project.members.length,
+        color: '#EC4899',
+        bg: 'rgba(236,72,153,0.1)'
+      },
+      {
+        icon: 'workspaces',
+        label: 'Teams',
+        value: this.project.teams.length,
+        color: '#0091FF',
+        bg: 'rgba(0,145,255,0.1)'
+      },
     ];
   }
 
@@ -304,14 +473,14 @@ export class ProjectDetail implements OnInit {
       priority: this.taskDraft.priority,
       status: 'pending',
       due_date: this.taskDraft.dueDate,
-      project_id: Number(this.project.id),
+      project_id: this.project.id,
       user_id: Number(this.taskDraft.assigneeId)
     };
 
     this.taskService.createTask(taskBody).subscribe({
       next: () => {
         alert("Task Added");
-        this.fetchTasks(Number(this.project!.id));
+        this.fetchProjectData(String(this.project!.id));
         this.taskCreating = false;
         this.showCreateTask = false;
         form.resetForm();
@@ -325,44 +494,39 @@ export class ProjectDetail implements OnInit {
   }
 
   updateTaskStatus(task: Task, status: Task['status']): void {
-
     const oldStatus = task.status;
     task.status = status;
 
-    this.taskService.updateTaskStatus(Number(task.id), status).subscribe({
+    const taskId = task.id.includes('-') ? Number(task.id.split('-')[1]) : Number(task.id);
 
+    this.taskService.updateTaskStatus(taskId, status).subscribe({
       next: () => {
-
         if (this.selectedTask?.id === task.id) {
           this.selectedTask = { ...task };
         }
 
-        this.updateProjectStatus();
+        if (this.project) {
+          const allTasks = this.project.teams.flatMap(t => t.tasks);
+          this.project.stats.completedTasks = allTasks.filter(t => t.status === 'done').length;
+          this.project.stats.todo = allTasks.filter(t => t.status === 'todo').length;
+          this.project.stats.inProgress = allTasks.filter(t => t.status === 'inprogress').length;
+        }
 
         this.activity.unshift({
-          initials: 'FH',
+          initials: 'YOU',
           color: '#5B5BD6',
           actor: 'You',
           action: status === 'done' ? 'completed' : `set to ${status}`,
-          target: task.title,
+          target: task.title || task.description,
           time: 'Just now',
         });
-
       },
-
       error: (err) => {
-
         console.error("Status Update Failed", err);
-
-        // revert if API fails
         task.status = oldStatus;
-
         alert("Failed to update task status");
-
       }
-
     });
-
   }
 
   quickToggleDone(task: Task): void {
@@ -373,9 +537,9 @@ export class ProjectDetail implements OnInit {
     this.openCreateTask(task.status);
 
     this.taskDraft = {
-      title: task.title,
+      title: task.title || '',
       description: task.description,
-      assigneeId: task.assignee?.id ?? '',
+      assigneeId: String(task.assignee?.id ?? ''),
       priority: task.priority,
       status: task.status as TaskDraft['status'],
       dueDate: task.dueDate,
@@ -385,9 +549,17 @@ export class ProjectDetail implements OnInit {
   onDeleteTask(task: Task): void {
     if (!this.project) return;
 
-    this.project.tasks = this.project.tasks.filter(t => t.id !== task.id);
+    this.project.teams.forEach(team => {
+      team.tasks = team.tasks.filter(t => t.id !== task.id);
+    });
+
     this.selectedTask = null;
-    this.updateProjectStatus();
+
+    const allTasks = this.project.teams.flatMap(t => t.tasks);
+    this.project.stats.totalTasks = allTasks.length;
+    this.project.stats.completedTasks = allTasks.filter(t => t.status === 'done').length;
+    this.project.stats.todo = allTasks.filter(t => t.status === 'todo').length;
+    this.project.stats.inProgress = allTasks.filter(t => t.status === 'inprogress').length;
   }
 
   openTaskDetail(task: Task): void {
@@ -397,18 +569,6 @@ export class ProjectDetail implements OnInit {
 
   openTaskMenu(task: Task): void {
     this.openTaskDetail(task);
-  }
-
-  updateProjectStatus(): void {
-    if (!this.project || this.project.tasks.length === 0) return;
-
-    const pct = this.getProgress();
-
-    if (pct === 100) {
-      this.project.status = 'completed';
-    } else if (pct > 0 && this.project.status === 'new') {
-      this.project.status = 'active';
-    }
   }
 
   // ───────────────── Navigation ─────────────────
@@ -421,17 +581,22 @@ export class ProjectDetail implements OnInit {
   }
 
   onDeleteProject(): void {
-    const projectId: number = Number(this.route.snapshot.paramMap.get('id'));
+    if (!this.project) return;
+
+    const projectId = String(this.project.id).includes('-')
+      ? Number(String(this.project.id).split('-')[1])
+      : Number(this.project.id);
 
     this.projectService.deleteProject(projectId).subscribe({
       next: (res: any) => {
-        alert(res.message);
+        alert(res.message || 'Project deleted successfully');
         this.router.navigate(['/app/projects']);
       },
       error: (err: any) => {
-        console.log('Error', err.message);
+        console.error('Error', err);
+        alert('Failed to delete project');
       }
-    })
+    });
   }
 
 }

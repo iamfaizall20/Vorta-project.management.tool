@@ -30,12 +30,12 @@
   position: relative;
 }
 
-/* ─── Project Accent Bar ─────────────────────────────────────── */
-.project-accent-bar {
-  height: 4px;
-  width: 100%;
-  flex-shrink: 0;
-  transition: background 0.3s ease;
+/* ─── Wrapper ────────────────────────────────────────────────── */
+.project-detail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* ─── Topbar ─────────────────────────────────────────────────── */
@@ -455,12 +455,83 @@
   color: var(--error) !important;
 }
 
+/* ─── Team Tabs ──────────────────────────────────────────────── */
+.team-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  animation: fadeUp 0.5s ease both 0.1s;
+}
+
+.team-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.team-tabs::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.team-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.team-tab:hover {
+  background: var(--surface-2);
+  border-color: rgba(91, 91, 214, 0.3);
+  color: var(--text);
+}
+
+.team-tab--active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.team-tab .material-icons {
+  font-size: 18px !important;
+}
+
+.team-tab__count {
+  background: var(--surface-2);
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+}
+
+.team-tab--active .team-tab__count {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
 /* ─── Board Header ───────────────────────────────────────────── */
 .board-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  animation: fadeUp 0.5s ease both 0.2s;
 }
 
 .board-header__left {
@@ -493,45 +564,6 @@
   padding: 2px 8px;
 }
 
-/* View toggle */
-.view-toggle {
-  display: flex;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 2px;
-  gap: 2px;
-}
-
-.view-btn {
-  width: 28px;
-  height: 28px;
-  background: none;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-faint);
-  transition: all 0.15s;
-}
-
-.view-btn:hover {
-  background: var(--surface);
-  color: var(--text-muted);
-}
-
-.view-btn--active {
-  background: var(--surface) !important;
-  color: var(--accent) !important;
-  box-shadow: var(--shadow-sm);
-}
-
-.view-btn .material-icons {
-  font-size: 18px !important;
-}
-
 /* ─── Kanban Board ───────────────────────────────────────────── */
 .kanban-board {
   display: grid;
@@ -539,6 +571,7 @@
   gap: 12px;
   align-items: start;
   overflow: visible;
+  animation: fadeUp 0.5s ease both 0.3s;
 }
 
 /* ─── Kanban Column ──────────────────────────────────────────── */
@@ -859,153 +892,6 @@
 
 .col-empty__add:hover {
   opacity: 0.7;
-}
-
-/* ─── List View ──────────────────────────────────────────────── */
-.list-view {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-.list-header-row {
-  display: grid;
-  grid-template-columns: 1fr 100px 80px 110px 100px 40px;
-  gap: 8px;
-  padding: 10px 16px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-}
-
-.list-col {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  display: flex;
-  align-items: center;
-}
-
-.list-col--title {
-  gap: 10px;
-}
-
-.list-col--actions {
-  justify-content: flex-end;
-}
-
-.list-task-row {
-  display: grid;
-  grid-template-columns: 1fr 100px 80px 110px 100px 40px;
-  gap: 8px;
-  padding: 11px 16px;
-  border-bottom: 1px solid var(--border-light);
-  cursor: pointer;
-  transition: background 0.12s;
-  font-size: 13.5px;
-  color: var(--text);
-  align-items: center;
-}
-
-.list-task-row:last-child {
-  border-bottom: none;
-}
-
-.list-task-row:hover {
-  background: var(--bg);
-}
-
-.list-task-row--done {
-  opacity: 0.55;
-}
-
-.list-task-row--done .list-col--title {
-  text-decoration: line-through;
-  color: var(--text-faint);
-}
-
-.list-task-check {
-  width: 17px;
-  height: 17px;
-  min-width: 17px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s;
-  flex-shrink: 0;
-}
-
-.list-task-check:hover {
-  border-color: var(--success);
-}
-
-.list-task-check--done {
-  background: var(--success);
-  border-color: var(--success);
-}
-
-.list-task-check--done .material-icons {
-  font-size: 11px !important;
-  color: #fff;
-}
-
-.list-unassigned {
-  color: var(--text-faint);
-}
-
-.list-due-col {
-  font-size: 12px;
-  color: var(--text-faint);
-}
-
-.status-chip {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 100px;
-  text-transform: capitalize;
-  white-space: nowrap;
-}
-
-.status-chip--todo {
-  background: rgba(161, 161, 170, 0.15);
-  color: #71717A;
-}
-
-.status-chip--inprogress {
-  background: rgba(91, 91, 214, 0.1);
-  color: #5B5BD6;
-}
-
-.status-chip--done {
-  background: rgba(48, 164, 108, 0.1);
-  color: #30A46C;
-}
-
-.status-chip--blocked {
-  background: rgba(239, 68, 68, 0.1);
-  color: #EF4444;
-}
-
-.list-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 40px 20px;
-  color: var(--text-faint);
-  font-size: 14px;
-}
-
-.list-empty .material-icons {
-  font-size: 32px !important;
-  color: var(--border);
 }
 
 /* ─── Right Sidebar ──────────────────────────────────────────── */
@@ -1753,15 +1639,7 @@
     grid-template-columns: 1fr;
   }
 
-  .list-header-row,
-  .list-task-row {
-    grid-template-columns: 1fr 70px 80px 40px;
-  }
-
-  .list-task-row> :nth-child(3),
-  .list-task-row> :nth-child(5),
-  .list-header-row> :nth-child(3),
-  .list-header-row> :nth-child(5) {
-    display: none;
+  .team-tabs {
+    overflow-x: auto;
   }
 }

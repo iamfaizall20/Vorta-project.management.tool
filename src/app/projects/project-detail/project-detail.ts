@@ -77,7 +77,7 @@ interface ActivityItem {
 @Component({
   selector: 'app-project-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TitleCasePipe],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './project-detail.html',
   styleUrls: ['./project-detail.css'],
 })
@@ -583,9 +583,7 @@ export class ProjectDetail implements OnInit {
   onDeleteProject(): void {
     if (!this.project) return;
 
-    const projectId = String(this.project.id).includes('-')
-      ? Number(String(this.project.id).split('-')[1])
-      : Number(this.project.id);
+    const projectId = String(this.project.id);
 
     this.projectService.deleteProject(projectId).subscribe({
       next: (res: any) => {

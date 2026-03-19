@@ -1,4 +1,3 @@
-// ========
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
@@ -17,10 +16,10 @@ interface Member {
 interface ProjectForm {
   name: string;
   description: string;
-  status: 'new' | 'active' | 'hold';
+  status: 'active' | 'completed' | 'on hold';
   dueDate: string;
   color: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: 'low' | 'medium' | 'high';
 }
 
 @Component({
@@ -36,7 +35,7 @@ export class CreateProject implements OnInit {
   form: ProjectForm = {
     name: '',
     description: '',
-    status: 'new',
+    status: 'active',
     dueDate: '',
     color: '#5B5BD6',
     priority: 'medium',
@@ -50,16 +49,8 @@ export class CreateProject implements OnInit {
 
   // ── Color palette ──────────────────────────────────────────
   colorOptions = [
-    '#5B5BD6',
-    '#E54D2E',
-    '#30A46C',
-    '#F59E0B',
-    '#EC4899',
-    '#7C7CE8',
-    '#0EA5E9',
-    '#8B5CF6',
-    '#14B8A6',
-    '#F97316',
+    '#5B5BD6', '#E54D2E', '#30A46C', '#F59E0B', '#EC4899',
+    '#7C7CE8', '#0EA5E9', '#8B5CF6', '#14B8A6', '#F97316',
   ];
 
   // ── Priority options ───────────────────────────────────────
@@ -67,10 +58,9 @@ export class CreateProject implements OnInit {
     { value: 'low' as const, label: 'Low', icon: 'south' },
     { value: 'medium' as const, label: 'Medium', icon: 'remove' },
     { value: 'high' as const, label: 'High', icon: 'north' },
-    { value: 'critical' as const, label: 'Critical', icon: 'priority_high' },
   ];
 
-  // ── Members (now from API) ─────────────────────────────────
+  // ── Members (from API) ────────────────────────────────────
   allMembers: Member[] = [];
   filteredAvailableMembers: Member[] = [];
   selectedMembers: Member[] = [];
@@ -85,7 +75,6 @@ export class CreateProject implements OnInit {
     this.getUsers();
   }
 
-  // ✅ Load Users from API
   getUsers(): void {
     this.userService.getUsers().subscribe({
       next: (res: any) => {
@@ -107,7 +96,6 @@ export class CreateProject implements OnInit {
     });
   }
 
-  // Compute initials from full name
   getInitials(fullName: string): string {
     return fullName
       .split(' ')
@@ -116,7 +104,6 @@ export class CreateProject implements OnInit {
       .toUpperCase();
   }
 
-  // ── Member search / filter ──────────────────────────────────
   filterMembers(): void {
     const q = this.memberQuery.toLowerCase().trim();
     this.filteredAvailableMembers = this.allMembers.filter(m =>
@@ -140,38 +127,53 @@ export class CreateProject implements OnInit {
     this.selectedMembers = this.selectedMembers.filter(m => m.id !== member.id);
   }
 
-  // ── Date formatting for preview ────────────────────────────
   formatDate(dateStr: string): string {
     if (!dateStr) return 'No due date';
     const d = new Date(dateStr);
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  // ── Submit ─────────────────────────────────────────────────
+  // ── Generate project_id on frontend ───────────────────────
+  generateProjectId(): string {
+    const randomNumber = Math.floor(100 + Math.random() * 900); // 3 random digits
+    return `PRJ-${randomNumber}`;
+  }
+
   onSubmit(ngForm: NgForm): void {
     if (ngForm.invalid) {
       ngForm.form.markAllAsTouched();
       return;
     }
 
+    const organization_id = localStorage.getItem('organization_id');
+
+    if (!organization_id) {
+      this.errorMsg = 'Organization not found. Please login again.';
+      return;
+    }
+
     this.loading = true;
     this.errorMsg = '';
 
+    // ✅ Generate project_id here
+    const project_id = this.generateProjectId();
+
     const payload = {
-      title: this.form.name.trim(),
+      organization_id,
+      project_id, // send it to backend
+      name: this.form.name.trim(),
       description: this.form.description.trim(),
       status: this.form.status,
       color: this.form.color,
-      due_date: this.form.dueDate,
-      priority: this.form.priority === 'medium' ? 'mid' : this.form.priority,
+      due_date: this.form.dueDate || null,
+      priority: this.form.priority,
       members: this.selectedMembers.map(m => m.id)
     };
 
-    // ✅ Call API instead of localStorage
     this.projectService.createProject(payload).subscribe({
       next: (res: any) => {
         if (res.success) {
-          this.router.navigate(['/app/projects', res.project_id]);
+          this.router.navigate(['/app/projects']);
         } else {
           this.errorMsg = res.message || 'Failed to create project';
         }

@@ -241,7 +241,7 @@ export class ProjectList implements OnInit {
     if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
 
     // Call the delete service
-    this.projectService.deleteProject(Number(p.id)).subscribe({
+    this.projectService.deleteProject(String(p.id)).subscribe({
       next: () => {
         this.projects = this.projects.filter(proj => proj.id !== p.id);
         localStorage.setItem('vorta_projects', JSON.stringify(this.projects));

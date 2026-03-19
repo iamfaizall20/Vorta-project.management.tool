@@ -147,8 +147,8 @@
                             <span class="material-icons field__icon">flag</span>
                             <select id="proj-status" name="status" class="field__input field__select"
                                 [(ngModel)]="form.status">
-                                <option value="new">New</option>
                                 <option value="active">Active</option>
+                                <option value="completed">Completed</option>
                                 <option value="hold">On Hold</option>
                             </select>
                             <span class="material-icons field__select-arrow">expand_more</span>
@@ -237,7 +237,7 @@
                     <button type="button" class="btn-ghost" (click)="onCancel()">Cancel</button>
                     <button type="submit" class="btn-primary" [disabled]="projectForm.invalid || loading"
                         [class.btn-primary--loading]="loading">
-                         <ng-container *ngIf="!loading">
+                        <ng-container *ngIf="!loading">
                             <span class="material-icons">add</span>
                             Create project
                         </ng-container>

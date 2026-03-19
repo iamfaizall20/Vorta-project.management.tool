@@ -34,7 +34,7 @@ export const routes: Routes = [
         path: 'projects',
         children: [
           { path: '', component: ProjectList },
-          { path: 'new', component: CreateProject },  // ← MUST be before :id
+          { path: 'new', component: CreateProject },
           { path: ':id', component: ProjectDetail },
         ]
       },

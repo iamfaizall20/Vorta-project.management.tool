@@ -10,6 +10,6 @@ export class UserService {
   constructor(private http: HttpClient) { }
 
   getUsers(): Observable<any> {
-    return this.http.get('http://localhost/VortaAppApis/users/get-all.php');
+    return this.http.get('http://localhost/VortaAppApis/users/get-members.php');
   }
 }

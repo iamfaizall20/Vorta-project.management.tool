@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { ProjectsService } from '../../services/projects-service';
 
+
 // Project interface with new API fields
 export interface Project {
   id: string | number;
@@ -102,7 +103,7 @@ export class ProjectList implements OnInit {
         // Cache to localStorage for offline fallback
         localStorage.setItem('vorta_projects', JSON.stringify(this.projects));
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error fetching projects:', err);
         this.isLoading = false;
 
@@ -246,7 +247,7 @@ export class ProjectList implements OnInit {
         this.projects = this.projects.filter(proj => proj.id !== p.id);
         localStorage.setItem('vorta_projects', JSON.stringify(this.projects));
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error deleting project:', err);
         alert('Failed to delete project. Please try again.');
       }

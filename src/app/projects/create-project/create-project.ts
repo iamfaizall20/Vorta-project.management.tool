@@ -2,8 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { ProjectsService } from '../../services/projects-service';
 import { UserService } from '../../services/user-service';
+import { ProjectsService } from '../../services/projects-service';
+
 
 interface Member {
   id: string;
@@ -67,7 +68,7 @@ export class CreateProject implements OnInit {
 
   constructor(
     private router: Router,
-    private projectService: ProjectsService,
+    private projectService: ProjectsService ,
     private userService: UserService
   ) { }
 

@@ -364,6 +364,22 @@
                 </div>
             </div>
 
+            <!-- Team Selection (ADD THIS) -->
+            <div class="field" [class.field--error]="teamField.invalid && teamField.touched">
+                <label class="field__label">Team <span class="field__required">*</span></label>
+                <div class="field__wrap field__wrap--select">
+                    <span class="material-icons field__icon">workspaces</span>
+                    <select name="teamId" class="field__input field__select" [(ngModel)]="taskDraft.teamId"
+                        #teamField="ngModel" required>
+                        <option value="">— Select team —</option>
+                        <option *ngFor="let team of project?.teams" [value]="team.teamId">{{ team.teamName }}</option>
+                    </select>
+                    <span class="material-icons field__select-arrow">expand_more</span>
+                </div>
+                <span class="field__msg" *ngIf="teamField.touched && teamField.errors?.['required']">Team is
+                    required.</span>
+            </div>
+
             <!-- Priority -->
             <div class="field">
                 <label class="field__label">Priority</label>

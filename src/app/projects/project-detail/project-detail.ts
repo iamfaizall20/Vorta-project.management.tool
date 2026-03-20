@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ProjectsService } from '../../services/projects-service';
 import { TaskService } from '../../services/task-service';
+import { ProjectsService } from '../../services/projects-service';
 
 // ───────────────── Interfaces ─────────────────
 export interface Member {
@@ -62,6 +62,7 @@ interface TaskDraft {
   priority: 'low' | 'medium' | 'high' | 'critical';
   status: 'todo' | 'inprogress' | 'blocked';
   dueDate: string;
+  teamId: string; // Added team selection
 }
 
 interface ActivityItem {
@@ -101,6 +102,7 @@ export class ProjectDetail implements OnInit {
     priority: 'medium',
     status: 'todo',
     dueDate: '',
+    teamId: '' // Initialize team selection
   };
 
   taskColumns = [
@@ -162,7 +164,7 @@ export class ProjectDetail implements OnInit {
     console.log('🔍 Fetching project data for ID:', id);
 
     this.projectService.projectDetails(id).subscribe({
-      next: (data) => {
+      next: (data: any) => {
         console.log('✅ Project data received:', data);
         console.log('📊 Stats:', data.stats);
         console.log('👥 Members count:', data.members?.length || 0);
@@ -256,7 +258,7 @@ export class ProjectDetail implements OnInit {
         this.isLoading = false;
         console.log('✅ Project loading complete');
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('❌ API Error:', err);
         console.error('❌ Error details:', {
           status: err.status,
@@ -442,13 +444,18 @@ export class ProjectDetail implements OnInit {
 
   // ───────────────── Task CRUD ─────────────────
   openCreateTask(defaultStatus: string = 'todo'): void {
+    // Pre-select the first team if user is viewing a specific team, otherwise leave empty
+    const defaultTeamId = this.selectedTeamId !== 'all' ? this.selectedTeamId :
+      (this.project?.teams.length ? this.project.teams[0].teamId : '');
+
     this.taskDraft = {
       title: '',
       description: '',
       assigneeId: '',
       priority: 'medium',
       status: defaultStatus as TaskDraft['status'],
-      dueDate: ''
+      dueDate: '',
+      teamId: defaultTeamId
     };
     this.showCreateTask = true;
     this.selectedTask = null;
@@ -463,31 +470,75 @@ export class ProjectDetail implements OnInit {
   }
 
   onCreateTask(form: NgForm): void {
-    if (form.invalid || !this.project) return;
+    if (form.invalid || !this.project) {
+      console.error('❌ Form invalid or no project');
+      return;
+    }
+
+    // Get required IDs from localStorage and component state
+    const organizationId = localStorage.getItem('organization_id');
+    const userId = localStorage.getItem('user_id');
+
+    // Validate required fields
+    if (!organizationId) {
+      console.error('❌ Missing organization_id in localStorage');
+      alert('Unable to create task. Missing organization information.');
+      return;
+    }
+
+    if (!this.taskDraft.teamId) {
+      console.error('❌ Team not selected');
+      alert('Please select a team for this task.');
+      return;
+    }
+
+    if (!this.taskDraft.assigneeId) {
+      console.error('❌ Assignee not selected');
+      alert('Please assign this task to a team member.');
+      return;
+    }
 
     this.taskCreating = true;
 
+    // Generate a unique task_id (you can modify this logic as needed)
+    const taskId = `task-${Date.now()}`;
+
+    // Prepare the complete task data with all required fields
     const taskBody = {
-      title: this.taskDraft.title.trim(),
-      description: this.taskDraft.description.trim(),
+      organization_id: organizationId,
+      project_id: String(this.project.id),
+      team_id: this.taskDraft.teamId,
+      task_id: taskId,
+      user_id: Number(this.taskDraft.assigneeId),
+      description: this.taskDraft.description.trim() || this.taskDraft.title.trim(),
+      status: 'pending', // API expects 'pending' for new tasks
       priority: this.taskDraft.priority,
-      status: 'pending',
-      due_date: this.taskDraft.dueDate,
-      project_id: this.project.id,
-      user_id: Number(this.taskDraft.assigneeId)
+      due_date: this.taskDraft.dueDate
     };
 
+    console.log('📤 Creating task with data:', taskBody);
+
     this.taskService.createTask(taskBody).subscribe({
-      next: () => {
-        alert("Task Added");
+      next: (response) => {
+        console.log('✅ Task created successfully:', response);
+        alert('Task created successfully!');
+
+        // Reload project data to get the new task
         this.fetchProjectData(String(this.project!.id));
+
         this.taskCreating = false;
         this.showCreateTask = false;
         form.resetForm();
       },
       error: (err: any) => {
-        alert("Failed to add task");
-        console.error('Create Task Error:', err);
+        console.error('❌ Create Task Error:', err);
+        console.error('❌ Error details:', {
+          status: err.status,
+          statusText: err.statusText,
+          message: err.message,
+          error: err.error
+        });
+        alert('Failed to create task. Please try again.');
         this.taskCreating = false;
       }
     });
@@ -522,9 +573,9 @@ export class ProjectDetail implements OnInit {
         });
       },
       error: (err) => {
-        console.error("Status Update Failed", err);
+        console.error('❌ Status Update Failed:', err);
         task.status = oldStatus;
-        alert("Failed to update task status");
+        alert('Failed to update task status');
       }
     });
   }
@@ -543,6 +594,7 @@ export class ProjectDetail implements OnInit {
       priority: task.priority,
       status: task.status as TaskDraft['status'],
       dueDate: task.dueDate,
+      teamId: task.teamId || ''
     };
   }
 
@@ -591,7 +643,7 @@ export class ProjectDetail implements OnInit {
         this.router.navigate(['/app/projects']);
       },
       error: (err: any) => {
-        console.error('Error', err);
+        console.error('❌ Delete Error:', err);
         alert('Failed to delete project');
       }
     });

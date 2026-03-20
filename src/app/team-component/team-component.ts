@@ -1,14 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ProjectService } from '../services/projects-service';
+import { ProjectsService } from '../services/projects-service';
 
 interface Project {
   id: string;
-  title: string;
+  name: string;
   description?: string;
   status?: string;
   priority?: string;
+  color?: string;
+  dueDate?: string;
+  totalMembers?: number;
+  totalTeams?: number;
+  totalTasks?: number;
+  completedTasks?: number;
   members?: TeamMember[];
 }
 
@@ -42,12 +48,13 @@ type DialogStep = 'project-selection' | 'team-creation';
   selector: 'app-team',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './team-component.html',
-  styleUrls: ['./team-component.css']
+  templateUrl: './team-Component.html',
+  styleUrls: ['./team-Component.css']
 })
 export class TeamComponent implements OnInit {
-  // Dialog state
-  isDialogOpen = false;
+  organizationId: string = '';
+
+  // Page state
   currentStep: DialogStep = 'project-selection';
 
   // Project selection
@@ -55,6 +62,7 @@ export class TeamComponent implements OnInit {
   filteredProjects: Project[] = [];
   searchQuery = '';
   isLoadingProjects = false;
+  isLoadingMembers = false; // ✅ Separate loading state for members
   selectedProject: Project | null = null;
 
   // Team creation form
@@ -74,33 +82,24 @@ export class TeamComponent implements OnInit {
   formErrors: { [key: string]: string } = {};
   isSubmitting = false;
 
-  constructor(private projectService: ProjectService) { }
+  constructor(private projectsService: ProjectsService) { }
 
   ngOnInit(): void {
-    // Component initialization
-  }
+    this.organizationId = localStorage.getItem('organization_id') || '';
 
-  /**
-   * Open the team creation dialog
-   */
-  openDialog(): void {
-    this.isDialogOpen = true;
-    this.currentStep = 'project-selection';
+    if (!this.organizationId) {
+      console.error('Organization ID not found in localStorage');
+      this.formErrors['general'] = 'Organization ID is missing. Please log in again.';
+      return;
+    }
+
     this.loadProjects();
   }
 
   /**
-   * Close the dialog and reset state
+   * Reset all state and go back to project selection
    */
-  closeDialog(): void {
-    this.isDialogOpen = false;
-    this.resetDialogState();
-  }
-
-  /**
-   * Reset all dialog state
-   */
-  private resetDialogState(): void {
+  resetToProjectSelection(): void {
     this.currentStep = 'project-selection';
     this.searchQuery = '';
     this.selectedProject = null;
@@ -112,19 +111,43 @@ export class TeamComponent implements OnInit {
    * Load all projects for the organization
    */
   loadProjects(): void {
+    if (!this.organizationId) {
+      console.error('Organization ID is not set');
+      this.formErrors['general'] = 'Organization ID is missing. Please log in again.';
+      return;
+    }
+
     this.isLoadingProjects = true;
 
-    this.projectService.projectDetails().subscribe({
-      next: (response: any) => {
-        // Assuming the API returns an array of projects or a response with projects array
-        this.projects = Array.isArray(response) ? response : (response.projects || []);
+    // Call without id parameter to get all projects
+    this.projectsService.projectDetails().subscribe({
+      next: (response) => {
+        console.log('Projects API Response:', response);
+
+        // Handle the response - it returns an array directly
+        this.projects = Array.isArray(response) ? response : [];
         this.filteredProjects = [...this.projects];
         this.isLoadingProjects = false;
+
+        // Clear any previous errors
+        delete this.formErrors['general'];
       },
-      error: (error: any) => {
+      error: (error) => {
         console.error('Error loading projects:', error);
         this.isLoadingProjects = false;
-        // TODO: Show error message to user
+
+        // Handle specific error cases
+        if (error.status === 400) {
+          this.formErrors['general'] = error.error?.error || 'Invalid organization ID.';
+        } else if (error.status === 404) {
+          this.formErrors['general'] = 'No projects found for this organization.';
+          this.projects = [];
+          this.filteredProjects = [];
+        } else if (error.status === 0) {
+          this.formErrors['general'] = 'Network error. Please check your connection.';
+        } else {
+          this.formErrors['general'] = error.error?.error || 'Failed to load projects. Please try again.';
+        }
       }
     });
   }
@@ -141,24 +164,76 @@ export class TeamComponent implements OnInit {
     }
 
     this.filteredProjects = this.projects.filter(project =>
-      project.title.toLowerCase().includes(query) ||
+      project.name.toLowerCase().includes(query) ||
       (project.description?.toLowerCase().includes(query) || false)
     );
   }
 
   /**
-   * Select a project and move to team creation step
+   * Select a project and load its details to get members
    */
   selectProject(project: Project): void {
     this.selectedProject = project;
     this.teamForm.project_id = project.id;
     this.teamForm.team_id = this.generateTeamId();
 
-    // Extract available users from project members
-    this.availableUsers = project.members || [];
-
-    // Move to team creation step
+    // Move to team creation step immediately
     this.currentStep = 'team-creation';
+
+    // Load full project details to get members in the background
+    this.loadProjectDetails(project.id);
+  }
+
+  /**
+   * Load detailed project information including members
+   */
+  private loadProjectDetails(projectId: string): void {
+    this.isLoadingMembers = true;
+
+    this.projectsService.projectDetails(projectId).subscribe({
+      next: (response) => {
+        console.log('Project Details Response:', response);
+
+        if (response.members && Array.isArray(response.members)) {
+          this.availableUsers = response.members.map((member: any) => ({
+            user_id: String(member.id),
+            name: member.name,
+            avatar_color: this.generateColorForUser(member.id)
+          }));
+        } else {
+          this.availableUsers = [];
+        }
+
+        this.isLoadingMembers = false;
+
+        delete this.formErrors['general'];
+        delete this.formErrors['members'];
+      },
+      error: (error) => {
+        console.error('Error loading project details:', error);
+        this.isLoadingMembers = false;
+
+        // Set empty members list
+        this.availableUsers = [];
+
+        // Show warning but don't block the flow
+        this.formErrors['members'] = 'Could not load project members. You may need to refresh.';
+      }
+    });
+  }
+
+  /**
+   * Generate a color for a user based on their ID
+   */
+  private generateColorForUser(userId: string | number): string {
+    const colors = [
+      '#5B5BD6', '#30A46C', '#F59E0B', '#EF4444',
+      '#8B5CF6', '#06B6D4', '#EC4899', '#10B981'
+    ];
+
+    const ID = String(userId);
+    const index = ID.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[index % colors.length];
   }
 
   /**
@@ -173,9 +248,8 @@ export class TeamComponent implements OnInit {
    * Generate a unique team ID
    */
   private generateTeamId(): string {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `team-${timestamp}-${random}`;
+    const num = Math.floor(1000 + Math.random() * 9000); // 4 digits
+    return `team-${num}`;
   }
 
   /**
@@ -190,6 +264,7 @@ export class TeamComponent implements OnInit {
       members: []
     };
     this.selectedUserIds.clear();
+    this.availableUsers = [];
     this.formErrors = {};
   }
 
@@ -267,29 +342,26 @@ export class TeamComponent implements OnInit {
 
     this.isSubmitting = true;
 
-    // TODO: Replace with actual API call to create team
-    // Example:
-    // this.teamService.createTeam(this.teamForm).subscribe({
-    //   next: (response) => {
-    //     console.log('Team created successfully:', response);
-    //     this.closeDialog();
-    //     // Show success message
-    //   },
-    //   error: (error) => {
-    //     console.error('Error creating team:', error);
-    //     this.isSubmitting = false;
-    //     // Show error message
-    //   }
-    // });
+    // Call the API to create team
+    this.projectsService.createTeam(this.teamForm).subscribe({
+      next: (response) => {
+        console.log('Team created successfully:', response);
+        this.isSubmitting = false;
 
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Team created:', this.teamForm);
-      this.isSubmitting = false;
-      this.closeDialog();
-      // TODO: Show success notification
-      // TODO: Refresh teams list
-    }, 1500);
+        // Reset to project selection after success
+        this.resetToProjectSelection();
+
+        // TODO: Show success notification
+        alert('Team created successfully!');
+      },
+      error: (error) => {
+        console.error('Error creating team:', error);
+        this.isSubmitting = false;
+
+        // Show error notification to user
+        this.formErrors['submit'] = error.error?.error || 'Failed to create team. Please try again.';
+      }
+    });
   }
 
   /**
@@ -335,21 +407,18 @@ export class TeamComponent implements OnInit {
   getAvatarColor(user: TeamMember): string {
     if (user.avatar_color) return user.avatar_color;
 
-    // Generate color based on user_id
     const colors = [
       '#5B5BD6', '#30A46C', '#F59E0B', '#EF4444',
       '#8B5CF6', '#06B6D4', '#EC4899', '#10B981'
     ];
-    const index = user.user_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[index % colors.length];
-  }
 
-  /**
-   * Handle backdrop click to close dialog
-   */
-  onBackdropClick(event: MouseEvent): void {
-    if (event.target === event.currentTarget) {
-      this.closeDialog();
-    }
+    const idStr = String(user.user_id);
+
+    const index = idStr.split('').reduce(
+      (acc, char) => acc + char.charCodeAt(0),
+      0
+    );
+
+    return colors[index % colors.length];
   }
 }

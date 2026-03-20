@@ -1,124 +1,117 @@
-<!-- Team Creation Dialog -->
-<div class="modal-backdrop" *ngIf="isDialogOpen" (click)="onBackdropClick($event)">
-    <div class="team-dialog" (click)="$event.stopPropagation()">
+<!-- Team Creation Page Component -->
+<div class="team-page">
 
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- STEP 1: Project Selection -->
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <div class="dialog-content" *ngIf="currentStep === 'project-selection'">
-            <!-- Header -->
-            <div class="dialog-header">
-                <div class="dialog-header__left">
-                    <span class="material-icons dialog-icon">groups</span>
-                    <div>
-                        <h2 class="dialog-title">Create New Team</h2>
-                        <p class="dialog-subtitle">Select a project to create a team for</p>
-                    </div>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- STEP 1: Project Selection -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="page-content" *ngIf="currentStep === 'project-selection'">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="page-header__left">
+                <span class="material-icons page-icon">groups</span>
+                <div>
+                    <h1 class="page-title">Create New Team</h1>
+                    <p class="page-subtitle">Select a project to create a team for</p>
                 </div>
-                <button class="icon-btn-sm" (click)="closeDialog()" type="button">
-                    <span class="material-icons">close</span>
-                </button>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="page-search">
+            <span class="material-icons search-icon">search</span>
+            <input type="text" class="search-input" placeholder="Search projects by name or description..."
+                [(ngModel)]="searchQuery" (input)="filterProjects()" />
+            <span class="search-count" *ngIf="searchQuery">
+                {{ filteredProjects.length }} of {{ projects.length }}
+            </span>
+        </div>
+
+        <!-- Projects Grid -->
+        <div class="page-body">
+            <!-- Loading State -->
+            <div class="loading-state" *ngIf="isLoadingProjects">
+                <div class="loading-spinner"></div>
+                <p>Loading projects...</p>
             </div>
 
-            <!-- Search Bar -->
-            <div class="dialog-search">
-                <span class="material-icons search-icon">search</span>
-                <input type="text" class="search-input" placeholder="Search projects by name or description..."
-                    [(ngModel)]="searchQuery" (input)="filterProjects()" />
-                <span class="search-count" *ngIf="searchQuery">
-                    {{ filteredProjects.length }} of {{ projects.length }}
-                </span>
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="!isLoadingProjects && filteredProjects.length === 0 && !searchQuery">
+                <span class="material-icons empty-icon">folder_off</span>
+                <p class="empty-text">No projects available</p>
+                <p class="empty-hint">Create a project first to add teams</p>
+            </div>
+
+            <!-- No Results State -->
+            <div class="empty-state" *ngIf="!isLoadingProjects && filteredProjects.length === 0 && searchQuery">
+                <span class="material-icons empty-icon">search_off</span>
+                <p class="empty-text">No projects found</p>
+                <p class="empty-hint">Try a different search term</p>
             </div>
 
             <!-- Projects Grid -->
-            <div class="dialog-body">
-                <!-- Loading State -->
-                <div class="loading-state" *ngIf="isLoadingProjects">
-                    <div class="loading-spinner"></div>
-                    <p>Loading projects...</p>
-                </div>
-
-                <!-- Empty State -->
-                <div class="empty-state" *ngIf="!isLoadingProjects && filteredProjects.length === 0 && !searchQuery">
-                    <span class="material-icons empty-icon">folder_off</span>
-                    <p class="empty-text">No projects available</p>
-                    <p class="empty-hint">Create a project first to add teams</p>
-                </div>
-
-                <!-- No Results State -->
-                <div class="empty-state" *ngIf="!isLoadingProjects && filteredProjects.length === 0 && searchQuery">
-                    <span class="material-icons empty-icon">search_off</span>
-                    <p class="empty-text">No projects found</p>
-                    <p class="empty-hint">Try a different search term</p>
-                </div>
-
-                <!-- Projects Grid -->
-                <div class="projects-grid" *ngIf="!isLoadingProjects && filteredProjects.length > 0">
-                    <div class="project-card" *ngFor="let project of filteredProjects" (click)="selectProject(project)">
-                        <div class="project-card__header">
-                            <div class="project-card__title-wrap">
-                                <span class="project-dot"
-                                    [style.background]="getAvatarColor({ user_id: project.id, name: project.title })"></span>
-                                <h3 class="project-card__title">{{ project.title }}</h3>
-                            </div>
-                            <button class="project-card__btn"
-                                (click)="selectProject(project); $event.stopPropagation()">
-                                <span class="material-icons">arrow_forward</span>
-                            </button>
+            <div class="projects-grid" *ngIf="!isLoadingProjects && filteredProjects.length > 0">
+                <div class="project-card" *ngFor="let project of filteredProjects" (click)="selectProject(project)">
+                    <div class="project-card__header">
+                        <div class="project-card__title-wrap">
+                            <span class="project-dot"
+                                [style.background]="getAvatarColor({ user_id: project.id, name: project.name })"></span>
+                            <h3 class="project-card__title">{{ project.name }}</h3>
                         </div>
+                        <button class="project-card__btn" (click)="selectProject(project); $event.stopPropagation()">
+                            <span class="material-icons">arrow_forward</span>
+                        </button>
+                    </div>
 
-                        <p class="project-card__desc" *ngIf="project.description">
-                            {{ project.description }}
-                        </p>
-                        <p class="project-card__desc project-card__desc--empty" *ngIf="!project.description">
-                            No description available
-                        </p>
+                    <p class="project-card__desc" *ngIf="project.description">
+                        {{ project.description }}
+                    </p>
+                    <p class="project-card__desc project-card__desc--empty" *ngIf="!project.description">
+                        No description available
+                    </p>
 
-                        <div class="project-card__footer">
-                            <div class="project-card__badges">
-                                <span class="status-badge" [ngClass]="getStatusClass(project.status)">
-                                    {{ project.status || 'New' }}
-                                </span>
-                                <span class="priority-badge" [ngClass]="getPriorityClass(project.priority)"
-                                    *ngIf="project.priority">
-                                    <span class="material-icons">flag</span>
-                                    {{ project.priority }}
-                                </span>
-                            </div>
-                            <div class="project-card__members" *ngIf="project.members && project.members.length > 0">
-                                <span class="material-icons members-icon">people</span>
-                                <span class="members-count">{{ project.members.length }}</span>
-                            </div>
+                    <div class="project-card__footer">
+                        <div class="project-card__badges">
+                            <span class="status-badge" [ngClass]="getStatusClass(project.status)">
+                                {{ project.status || 'New' }}
+                            </span>
+                            <span class="priority-badge" [ngClass]="getPriorityClass(project.priority)"
+                                *ngIf="project.priority">
+                                <span class="material-icons">flag</span>
+                                {{ project.priority }}
+                            </span>
+                        </div>
+                        <div class="project-card__members" *ngIf="project.members && project.members.length > 0">
+                            <span class="material-icons members-icon">people</span>
+                            <span class="members-count">{{ project.members.length }}</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- STEP 2: Team Creation Form -->
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <div class="dialog-content" *ngIf="currentStep === 'team-creation'">
-            <!-- Header -->
-            <div class="dialog-header">
-                <div class="dialog-header__left">
-                    <button class="back-btn" (click)="backToProjectSelection()" type="button">
-                        <span class="material-icons">arrow_back</span>
-                    </button>
-                    <div>
-                        <h2 class="dialog-title">Create Team</h2>
-                        <p class="dialog-subtitle" *ngIf="selectedProject">
-                            For project: <strong>{{ selectedProject.title }}</strong>
-                        </p>
-                    </div>
-                </div>
-                <button class="icon-btn-sm" (click)="closeDialog()" type="button">
-                    <span class="material-icons">close</span>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- STEP 2: Team Creation Form -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="page-content" *ngIf="currentStep === 'team-creation'">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="page-header__left">
+                <button class="back-btn" (click)="backToProjectSelection()" type="button">
+                    <span class="material-icons">arrow_back</span>
                 </button>
+                <div>
+                    <h1 class="page-title">Create Team</h1>
+                    <p class="page-subtitle" *ngIf="selectedProject">
+                        For project: <strong>{{ selectedProject.name }}</strong>
+                    </p>
+                </div>
             </div>
+        </div>
 
-            <!-- Form -->
-            <div class="dialog-body dialog-body--form">
+        <!-- Form -->
+        <div class="page-body page-body--form">
+            <div class="form-container">
                 <form class="team-form" (ngSubmit)="submitTeamForm()">
 
                     <!-- Team ID (Read-only, auto-generated) -->
@@ -233,14 +226,6 @@
                 </form>
             </div>
         </div>
-
     </div>
-</div>
 
-<!-- Trigger Button (example - place this where you want the button) -->
-<!-- 
-  <button class="btn-primary" (click)="openDialog()">
-    <span class="material-icons">add</span>
-    New Team
-  </button>
-  -->
+</div>

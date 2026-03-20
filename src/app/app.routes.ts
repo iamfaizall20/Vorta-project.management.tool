@@ -13,6 +13,7 @@ import { Profile } from './profile/profile';
 import { Settings } from './settings/settings';
 import { LoginComponent } from './login/login';
 import { Member } from './member/member';
+import { TeamComponent } from './team-component/team-component';
 
 export const routes: Routes = [
 
@@ -44,6 +45,7 @@ export const routes: Routes = [
 
       // Teams — single page, drawers handle create/detail internally
       { path: 'teams', component: TeamList },
+      { path: 'team/new', component: TeamComponent },
 
       // Members
       { path: 'members', component: Members },

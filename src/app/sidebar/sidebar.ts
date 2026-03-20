@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { ProjectsService } from '../services/projects-service';
+import { TeamComponent } from '../team-component/team-component';
 
 interface NavItem {
   icon: string;
@@ -37,6 +38,10 @@ interface OrgStats {
   styleUrls: ['./sidebar.css'],
 })
 export class Sidebar implements OnInit {
+
+
+  @ViewChild('teamComponent') teamComponent!: TeamComponent;
+
   isCollapsed = false;
   projectsExpanded = true;
   recentsExpanded = true;
@@ -91,6 +96,18 @@ export class Sidebar implements OnInit {
     }
   ];
 
+  onTeamCreated(team: any): void {
+    console.log('New team created:', team);
+    // You can emit this to parent component or handle it here
+    // Example: refresh teams list, show notification, etc.
+  }
+
+  /**
+   * Handle dialog closed event
+   */
+  onDialogClosed(): void {
+    console.log('Team creation dialog closed');
+  }
   // ── Recent items ─────────────────────────────────────────────
   recentItems: RecentItem[] = [
     { icon: 'task_alt', label: 'Sprint Planning — Task #42', route: '/app/tasks' },
@@ -99,6 +116,7 @@ export class Sidebar implements OnInit {
   ];
 
   constructor(private router: Router, private projectService: ProjectsService) { }
+
 
   ngOnInit(): void {
     const saved = localStorage.getItem('vorta_sidebar_collapsed');
@@ -171,7 +189,7 @@ export class Sidebar implements OnInit {
   }
 
   onNewTeam(): void {
-    this.router.navigate(['/app/teams/new']);
+    this.router.navigate(['/app/team/new']);
     this.createMenuExpanded = false;
   }
 

@@ -50,7 +50,6 @@
                         [title]="item.label">
                         <div class="nav-item__icon-wrap">
                             <span class="material-icons nav-item__icon">{{ item.icon }}</span>
-                            <span class="nav-item__badge" *ngIf="item.badge && !isCollapsed">{{ item.badge }}</span>
                             <span class="nav-item__dot" *ngIf="item.badge && isCollapsed"></span>
                         </div>
                         <span class="nav-item__label" *ngIf="!isCollapsed">{{ item.label }}</span>
@@ -86,7 +85,9 @@
             </ul>
         </div>
 
-        <div class="nav-section" *ngIf="!isCollapsed">
+
+        <!-- Extra Part To be removed -->
+        <!-- <div class="nav-section" *ngIf="!isCollapsed">
             <div class="nav-section__header" (click)="recentsExpanded = !recentsExpanded">
                 <span class="nav-section__label">Recents</span>
                 <span class="material-icons nav-section__arrow" [class.rotated]="!recentsExpanded">expand_more</span>
@@ -99,7 +100,7 @@
                     </a>
                 </li>
             </ul>
-        </div>
+        </div> -->
 
     </nav>
 

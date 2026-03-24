@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { ProjectsService } from '../services/projects-service';
-import { TeamComponent } from '../team-component/team-component';
+import { TaskService } from '../services/task-service';
 
 interface NavItem {
   icon: string;
@@ -18,11 +18,11 @@ interface RecentProject {
   status: 'active' | 'completed' | 'pending' | 'new';
 }
 
-interface RecentItem {
-  icon: string;
-  label: string;
-  route: string;
-}
+// interface RecentItem {
+//   icon: string;
+//   label: string;
+//   route: string;
+// }
 
 interface OrgStats {
   teams: number;
@@ -39,14 +39,12 @@ interface OrgStats {
 })
 export class Sidebar implements OnInit {
 
-
-  @ViewChild('teamComponent') teamComponent!: TeamComponent;
-
   isCollapsed = false;
   projectsExpanded = true;
   recentsExpanded = true;
   createMenuExpanded = false;
   isUserAdmin = false;
+  taskCount: number = 0;
 
   // ── Organization info ────────────────────────────────────────
   orgStats: OrgStats = {
@@ -56,50 +54,27 @@ export class Sidebar implements OnInit {
   };
 
   // ── Main navigation (removed Teams and Members) ──────────────
+
   mainNav: NavItem[] = [
     { icon: 'grid_view', label: 'Dashboard', route: '/app/dashboard' },
     { icon: 'folder_open', label: 'Projects', route: '/app/projects' },
-    { icon: 'task_alt', label: 'My Tasks', route: '/app/tasks', badge: 5 }
+    { icon: 'task_alt', label: 'My Tasks', route: '/app/tasks' }
   ];
 
   // ── Recent projects ──────────────────────────────────────────
-  recentProjects: RecentProject[] = [
-    {
-      id: 1,
-      name: 'Website Redesign',
-      color: '#4CAF50',
-      status: 'active'
-    },
-    {
-      id: 2,
-      name: 'Mobile App UI',
-      color: '#2196F3',
-      status: 'active'
-    },
-    {
-      id: 3,
-      name: 'Backend API Development',
-      color: '#FF9800',
-      status: 'pending'
-    },
-    {
-      id: 4,
-      name: 'Marketing Landing Page',
-      color: '#E91E63',
-      status: 'completed'
-    },
-    {
-      id: 5,
-      name: 'Database Optimization',
-      color: '#9C27B0',
-      status: 'active'
-    }
-  ];
+  recentProjects: RecentProject[] = [];
 
   onTeamCreated(team: any): void {
     console.log('New team created:', team);
     // You can emit this to parent component or handle it here
     // Example: refresh teams list, show notification, etc.
+  }
+
+  updateNavBadge() {
+    const taskItem = this.mainNav.find(item => item.label === 'My Tasks');
+    if (taskItem) {
+      taskItem.badge = this.taskCount;
+    }
   }
 
   /**
@@ -108,15 +83,8 @@ export class Sidebar implements OnInit {
   onDialogClosed(): void {
     console.log('Team creation dialog closed');
   }
-  // ── Recent items ─────────────────────────────────────────────
-  recentItems: RecentItem[] = [
-    { icon: 'task_alt', label: 'Sprint Planning — Task #42', route: '/app/tasks' },
-    { icon: 'folder', label: 'Backend API', route: '/app/projects/p1' },
-    { icon: 'person', label: 'Ali Raza — Profile', route: '/app/members' },
-  ];
 
-  constructor(private router: Router, private projectService: ProjectsService) { }
-
+  constructor(private router: Router, private projectService: ProjectsService, private taskService: TaskService) { }
 
   ngOnInit(): void {
     const saved = localStorage.getItem('vorta_sidebar_collapsed');
@@ -126,6 +94,24 @@ export class Sidebar implements OnInit {
     this.isUserAdmin = this.checkUserRole;
     this.getRecentProjects();
     this.loadOrgStats();
+    this.countTasks();
+  }
+
+  countTasks() {
+
+    const userId = JSON.parse(localStorage.getItem('user_id')!);
+
+    this.taskService.getTasks(userId).subscribe({
+      next: (res: any) => {
+        this.countTasks = res.tasks.length;
+
+        this.updateNavBadge();
+      },
+      error: (err: any) => {
+        console.log('Error', err);
+
+      }
+    })
   }
 
   get checkUserRole() {

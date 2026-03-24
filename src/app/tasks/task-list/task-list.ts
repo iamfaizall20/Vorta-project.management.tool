@@ -9,6 +9,7 @@ export interface FlatTask {
   id: string;
   projectId: string;
   projectName: string;
+  teamName: string;
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
@@ -52,6 +53,10 @@ export class TaskList implements OnInit {
   sortBy: 'dueDate' | 'priority' | 'project' | 'status' = 'dueDate';
   today = new Date().toISOString().split('T')[0];
 
+  // ── Loading / error state ──────────────────────────────────
+  isLoadingTasks = false;
+  loadError: string | null = null;
+
   // ── Drawers ────────────────────────────────────────────────
   selectedTask: FlatTask | null = null;
   showCreate = false;
@@ -81,7 +86,7 @@ export class TaskList implements OnInit {
     dueDate: '',
   };
 
-  // ── Users list (for assignee dropdown — filtered by selected project members) ──
+  // ── Users list ─────────────────────────────────────────────
   allUsers: { id: string; name: string }[] = [];
 
   // ── Project members for current draft project ──────────────
@@ -131,7 +136,7 @@ export class TaskList implements OnInit {
     this.loadUsers();
   }
 
-  // ── Load users via UserService (fallback list) ─────────────
+  // ── Load users via UserService ─────────────────────────────
   loadUsers(): void {
     this.userService.getUsers().subscribe({
       next: (users: any[]) => {
@@ -139,7 +144,7 @@ export class TaskList implements OnInit {
         this.resetDraftAssignee();
       },
       error: () => {
-        this.allUsers = [{ id: '1', name: 'Faizal Hassan' }];
+        this.allUsers = [];
         this.resetDraftAssignee();
       }
     });
@@ -155,40 +160,73 @@ export class TaskList implements OnInit {
 
   // ── Called when project dropdown changes ───────────────────
   onProjectChange(): void {
-    // Reset assignee to first member of the newly selected project
     const members = this.projectMembers;
     this.draft.assigneeId = members.length ? members[0].id : '';
   }
 
-  // ── Load tasks from localStorage ───────────────────────────
-  // NOTE: Replace this method body once your fetch-tasks API is ready.
+  // ── Normalize status from API response ────────────────────
+  // API returns empty string or various status strings — map to valid FlatTask statuses
+  private normalizeStatus(raw: string): FlatTask['status'] {
+    const s = (raw || '').toLowerCase().trim();
+    if (s === 'done' || s === 'completed' || s === 'complete') return 'done';
+    if (s === 'inprogress' || s === 'in_progress' || s === 'in progress') return 'inprogress';
+    if (s === 'blocked') return 'blocked';
+    // Default empty / unknown → todo
+    return 'todo';
+  }
+
+  // ── Normalize priority from API response ──────────────────
+  private normalizePriority(raw: string): FlatTask['priority'] {
+    const p = (raw || '').toLowerCase().trim();
+    if (p === 'critical') return 'critical';
+    if (p === 'high') return 'high';
+    if (p === 'low') return 'low';
+    return 'medium';
+  }
+
+  // ── Load tasks from API ────────────────────────────────────
+  // Calls GET http://localhost/VortaAppApis/tasks/get.php?id=<userId>
+  // Maps API shape: { task_id, task_description, status, priority, due_date, created_at,
+  //                   user_id, project_name, team_name }
   loadTasks(): void {
-    const projects = JSON.parse(localStorage.getItem('vorta_projects') || '[]');
-    const currentUserId = 'u1';
-    const flat: FlatTask[] = [];
+    this.isLoadingTasks = true;
+    this.loadError = null;
 
-    for (const p of projects) {
-      for (const t of (p.tasks || [])) {
-        // Show all tasks or filter by current user — adjust as needed
-        const isAssigned = !t.assignee || t.assignee.id === currentUserId;
-        if (isAssigned) {
-          flat.push({
-            id: t.id,
-            projectId: p.id,
-            projectName: p.name,
-            title: t.title,
-            description: t.description || '',
-            priority: t.priority || 'medium',
-            status: t.status,
-            dueDate: t.dueDate || '',
-            createdAt: t.createdAt || '',
-            assignee: t.assignee || null,
-          });
+    // Retrieve the current user id — adjust the source to match your auth setup
+    const currentUserId = Number(localStorage.getItem('vorta_user_id') || 23817);
+
+    this.taskService.getTasks(currentUserId).subscribe({
+      next: (res: any) => {
+        this.isLoadingTasks = false;
+
+        if (res?.success && Array.isArray(res.tasks)) {
+          this.tasks = res.tasks.map((t: any): FlatTask => ({
+            id: String(t.task_id),
+            // project_name is the project identifier from the API
+            projectId: t.project_name ?? '',
+            projectName: t.project_name ?? '',
+            teamName: t.team_name ?? '',
+            // task_description is the task title in the API response
+            title: t.task_description ?? '',
+            description: '',
+            priority: this.normalizePriority(t.priority),
+            status: this.normalizeStatus(t.status),
+            dueDate: t.due_date ? t.due_date.split(' ')[0] : '',
+            createdAt: t.created_at ?? '',
+            assignee: t.user_id ? { id: String(t.user_id), name: '' } : null,
+          }));
+        } else {
+          this.tasks = [];
+          this.loadError = res?.message ?? 'No tasks found.';
         }
+      },
+      error: (err) => {
+        this.isLoadingTasks = false;
+        this.tasks = [];
+        this.loadError = err?.error?.message || 'Failed to load tasks. Please try again.';
+        console.error('loadTasks error:', err);
       }
-    }
-
-    this.tasks = flat.length ? flat : this.getMockTasks();
+    });
   }
 
   // ── Load projects from localStorage ────────────────────────
@@ -197,56 +235,28 @@ export class TaskList implements OnInit {
     this.allProjects = projects.map((p: any) => ({
       id: p.id,
       name: p.name,
-      // Expect members array stored alongside each project in localStorage
       members: (p.members || []).map((m: any) => ({ id: String(m.id), name: m.name })),
     }));
-
-    if (!this.allProjects.length) {
-      this.allProjects = [
-        { id: 'p1', name: 'Backend API v2', members: [] },
-        { id: 'p2', name: 'Mobile App Redesign', members: [] },
-        { id: 'p3', name: 'Auth & Onboarding', members: [] },
-        { id: 'p4', name: 'Design System', members: [] },
-      ];
-    }
-  }
-
-  // ── Mock tasks (shown when localStorage is empty) ─────────
-  getMockTasks(): FlatTask[] {
-    const d = (offset: number) => {
-      const dt = new Date();
-      dt.setDate(dt.getDate() + offset);
-      return dt.toISOString().split('T')[0];
-    };
-    return [
-      { id: 'm1', projectId: 'p1', projectName: 'Backend API v2', title: 'Set up Express router', description: 'Create modular routing structure', priority: 'high', status: 'inprogress', dueDate: d(-1), createdAt: d(-5), assignee: { id: 'u1', name: 'Faizal Hassan' } },
-      { id: 'm2', projectId: 'p2', projectName: 'Mobile App Redesign', title: 'Design onboarding screens', description: 'Figma wireframes for 5 onboarding steps', priority: 'medium', status: 'todo', dueDate: d(0), createdAt: d(-3), assignee: { id: 'u1', name: 'Faizal Hassan' } },
-      { id: 'm3', projectId: 'p3', projectName: 'Auth & Onboarding', title: 'JWT refresh token logic', description: 'Implement sliding expiry refresh', priority: 'critical', status: 'todo', dueDate: d(2), createdAt: d(-2), assignee: { id: 'u1', name: 'Faizal Hassan' } },
-      { id: 'm4', projectId: 'p4', projectName: 'Design System', title: 'Build Button component', description: 'All variants: primary, ghost, danger', priority: 'low', status: 'done', dueDate: d(-3), createdAt: d(-10), assignee: { id: 'u1', name: 'Faizal Hassan' } },
-      { id: 'm5', projectId: 'p1', projectName: 'Backend API v2', title: 'Write unit tests for auth', description: '', priority: 'medium', status: 'blocked', dueDate: d(10), createdAt: d(-1), assignee: { id: 'u1', name: 'Faizal Hassan' } },
-    ];
   }
 
   // ── Filters & sorting ─────────────────────────────────────
   get filteredTasks(): FlatTask[] {
     let list = [...this.tasks];
 
-    // Search filter
     if (this.searchQuery.trim()) {
       const q = this.searchQuery.toLowerCase();
       list = list.filter(t =>
         t.title.toLowerCase().includes(q) ||
         t.projectName.toLowerCase().includes(q) ||
+        t.teamName.toLowerCase().includes(q) ||
         t.description.toLowerCase().includes(q)
       );
     }
 
-    // Priority filter
     if (this.activePriority !== 'all') {
       list = list.filter(t => t.priority === this.activePriority);
     }
 
-    // Sorting
     list.sort((a, b) => {
       switch (this.sortBy) {
         case 'priority':
@@ -273,13 +283,16 @@ export class TaskList implements OnInit {
 
   // ── Due-date helpers ──────────────────────────────────────
   private isToday(d: string): boolean { return !!d && d === this.today; }
+
   isOverdue(d: string): boolean { return !!d && d < this.today; }
+
   private isThisWeek(d: string): boolean {
     if (!d || d <= this.today) return false;
     const end = new Date();
     end.setDate(end.getDate() + 7);
     return new Date(d) <= end;
   }
+
   private isLater(d: string): boolean {
     if (!d) return false;
     const end = new Date();
@@ -287,18 +300,34 @@ export class TaskList implements OnInit {
     return new Date(d) > end;
   }
 
-  get overdueTasks(): FlatTask[] { return this.filteredTasks.filter(t => t.status !== 'done' && this.isOverdue(t.dueDate)); }
-  get todayTasks(): FlatTask[] { return this.filteredTasks.filter(t => t.status !== 'done' && this.isToday(t.dueDate)); }
-  get thisWeekTasks(): FlatTask[] { return this.filteredTasks.filter(t => t.status !== 'done' && this.isThisWeek(t.dueDate)); }
-  get laterTasks(): FlatTask[] { return this.filteredTasks.filter(t => t.status !== 'done' && this.isLater(t.dueDate)); }
-  get noDueTasks(): FlatTask[] { return this.filteredTasks.filter(t => !t.dueDate); }
+  get overdueTasks(): FlatTask[] {
+    return this.filteredTasks.filter(t => t.status !== 'done' && this.isOverdue(t.dueDate));
+  }
+  get todayTasks(): FlatTask[] {
+    return this.filteredTasks.filter(t => t.status !== 'done' && this.isToday(t.dueDate));
+  }
+  get thisWeekTasks(): FlatTask[] {
+    return this.filteredTasks.filter(t => t.status !== 'done' && this.isThisWeek(t.dueDate));
+  }
+  get laterTasks(): FlatTask[] {
+    return this.filteredTasks.filter(t => t.status !== 'done' && this.isLater(t.dueDate));
+  }
+  get noDueTasks(): FlatTask[] {
+    return this.filteredTasks.filter(t => !t.dueDate);
+  }
 
-  get overdueCount(): number { return this.tasks.filter(t => t.status !== 'done' && this.isOverdue(t.dueDate)).length; }
-  get todayCount(): number { return this.tasks.filter(t => t.status !== 'done' && this.isToday(t.dueDate)).length; }
+  get overdueCount(): number {
+    return this.tasks.filter(t => t.status !== 'done' && this.isOverdue(t.dueDate)).length;
+  }
+  get todayCount(): number {
+    return this.tasks.filter(t => t.status !== 'done' && this.isToday(t.dueDate)).length;
+  }
   get doneCount(): number { return this.tasks.filter(t => t.status === 'done').length; }
   get totalCount(): number { return this.tasks.length; }
 
-  getByStatus(status: string): FlatTask[] { return this.filteredTasks.filter(t => t.status === status); }
+  getByStatus(status: string): FlatTask[] {
+    return this.filteredTasks.filter(t => t.status === status);
+  }
 
   getPriorityIcon(p: string): string {
     return ({ low: 'south', medium: 'remove', high: 'north', critical: 'priority_high' } as Record<string, string>)[p] ?? 'remove';
@@ -306,7 +335,9 @@ export class TaskList implements OnInit {
 
   formatDate(d: string): string {
     if (!d) return '';
-    const dt = new Date(d + 'T00:00:00');
+    // due_date from API may be "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS"
+    const dateStr = d.split(' ')[0];
+    const dt = new Date(dateStr + 'T00:00:00');
     const now = new Date();
     const diff = Math.round((dt.getTime() - now.setHours(0, 0, 0, 0)) / 86400000);
     if (diff === 0) return 'Today';
@@ -323,17 +354,11 @@ export class TaskList implements OnInit {
   setStatus(t: FlatTask, status: FlatTask['status']): void {
     t.status = status;
     if (this.selectedTask?.id === t.id) this.selectedTask = { ...t };
-    this.saveTaskToLocalStorage(t);
-  }
 
-  saveTaskToLocalStorage(updated: FlatTask): void {
-    const projects = JSON.parse(localStorage.getItem('vorta_projects') || '[]');
-    const proj = projects.find((p: any) => p.id === updated.projectId);
-    if (proj) {
-      const idx = (proj.tasks || []).findIndex((t: any) => t.id === updated.id);
-      if (idx !== -1) proj.tasks[idx] = { ...proj.tasks[idx], ...updated };
-      localStorage.setItem('vorta_projects', JSON.stringify(projects));
-    }
+    // Persist via API
+    this.taskService.updateTaskStatus(Number(t.id), status).subscribe({
+      error: (err) => console.error('updateTaskStatus error:', err)
+    });
   }
 
   // ── Detail drawer ─────────────────────────────────────────
@@ -371,8 +396,6 @@ export class TaskList implements OnInit {
 
   // ── Create task via API ───────────────────────────────────
   onCreateTask(form: NgForm): void {
-    console.log("Create Function Called");
-
     if (form.invalid) return;
 
     this.creating = true;
@@ -388,14 +411,10 @@ export class TaskList implements OnInit {
       user_id: Number(this.draft.assigneeId),
       due_date: this.draft.dueDate || null,
     };
-    console.log(payload);
+
     this.taskService.createTask(payload).subscribe({
-
       next: (res: any) => {
-        console.log("API Called");
         if (res?.success && res.task_id) {
-          console.log("API Called Successfully");
-
           const project = this.allProjects.find(p => p.id === this.draft.projectId);
           const assignee = this.projectMembers.find(u => u.id === this.draft.assigneeId);
 
@@ -403,6 +422,7 @@ export class TaskList implements OnInit {
             id: String(res.task_id),
             projectId: this.draft.projectId,
             projectName: project?.name ?? '',
+            teamName: '',
             title: payload.title,
             description: payload.description,
             priority: this.draft.priority,
@@ -412,23 +432,16 @@ export class TaskList implements OnInit {
             assignee: assignee ? { id: assignee.id, name: assignee.name } : null,
           };
 
-          // Add to local list immediately (optimistic update)
+          // Optimistic update
           this.tasks = [newTask, ...this.tasks];
-
-          // Also persist to localStorage so list view stays in sync
-          const projects = JSON.parse(localStorage.getItem('vorta_projects') || '[]');
-          const proj = projects.find((p: any) => String(p.id) === this.draft.projectId);
-          if (proj) {
-            proj.tasks = proj.tasks || [];
-            proj.tasks.push(newTask);
-            localStorage.setItem('vorta_projects', JSON.stringify(projects));
-          }
 
           this.creating = false;
           this.showCreate = false;
           this.createSuccess = 'Task created successfully!';
-
           setTimeout(() => { this.createSuccess = null; }, 3000);
+
+          // Reload from API to get fresh server state including team_name
+          this.loadTasks();
 
         } else {
           this.createError = res?.message ?? 'Failed to create task.';
@@ -443,7 +456,6 @@ export class TaskList implements OnInit {
   }
 
   onEditTask(t: FlatTask): void {
-    this.saveTaskToLocalStorage(t);
     const idx = this.tasks.findIndex(x => x.id === t.id);
     if (idx !== -1) this.tasks[idx] = { ...t };
   }
@@ -451,14 +463,6 @@ export class TaskList implements OnInit {
   // ── Delete task ───────────────────────────────────────────
   onDeleteTask(t: FlatTask): void {
     this.tasks = this.tasks.filter(x => x.id !== t.id);
-
-    const projects = JSON.parse(localStorage.getItem('vorta_projects') || '[]');
-    const proj = projects.find((p: any) => p.id === t.projectId);
-    if (proj) {
-      proj.tasks = (proj.tasks || []).filter((x: any) => x.id !== t.id);
-      localStorage.setItem('vorta_projects', JSON.stringify(projects));
-    }
-
     if (this.selectedTask?.id === t.id) this.selectedTask = null;
   }
 
@@ -495,17 +499,15 @@ export class TaskList implements OnInit {
     const lastDay = new Date(this.calYear, this.calMonth + 1, 0);
     const todayStr = this.today;
 
-    // Pad start with previous month days
     for (let i = 0; i < firstDay.getDay(); i++) {
       const date = new Date(this.calYear, this.calMonth, -firstDay.getDay() + i + 1);
       cells.push({ day: date.getDate(), date, isCurrentMonth: false, isToday: false, tasks: [] });
     }
 
-    // Current month days
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const date = new Date(this.calYear, this.calMonth, d);
       const dateStr = date.toISOString().split('T')[0];
-      const tasks = this.tasks.filter(t => t.dueDate === dateStr);
+      const tasks = this.tasks.filter(t => t.dueDate && t.dueDate.split(' ')[0] === dateStr);
       cells.push({
         day: d,
         date,
@@ -515,7 +517,6 @@ export class TaskList implements OnInit {
       });
     }
 
-    // Pad end to complete the last row
     const remaining = (7 - (cells.length % 7)) % 7;
     for (let i = 1; i <= remaining; i++) {
       const date = new Date(this.calYear, this.calMonth + 1, i);

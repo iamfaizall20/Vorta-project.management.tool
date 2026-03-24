@@ -48,8 +48,8 @@ type DialogStep = 'project-selection' | 'team-creation';
   selector: 'app-team',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './team-Component.html',
-  styleUrls: ['./team-Component.css']
+  templateUrl: './team-component.html',
+  styleUrls: ['./team-component.css']
 })
 export class TeamComponent implements OnInit {
   organizationId: string = '';

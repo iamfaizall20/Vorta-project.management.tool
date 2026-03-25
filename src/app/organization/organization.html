@@ -1,0 +1,527 @@
+<div class="org-page">
+
+    <!-- ── Topbar ─────────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar__left">
+            <nav class="breadcrumb">
+                <a class="breadcrumb__item" routerLink="/app">Vorta</a>
+                <span class="material-icons breadcrumb__sep">chevron_right</span>
+                <span class="breadcrumb__item breadcrumb__item--active">Organization</span>
+            </nav>
+        </div>
+        <div class="topbar__right">
+            <button class="btn-ghost btn-sm" (click)="onCancel()" *ngIf="isDirty">Discard</button>
+            <button class="btn-primary btn-sm" (click)="onSave()" [disabled]="saving" [class.btn--loading]="saving">
+                <span class="spinner" *ngIf="saving"></span>
+                <span class="material-icons" *ngIf="!saving">save</span>
+                {{ saving ? 'Saving…' : 'Save Changes' }}
+            </button>
+        </div>
+    </header>
+
+    <!-- ── Main ───────────────────────────────────────────────── -->
+    <main class="org-main">
+
+        <!-- ── LEFT: Identity ───────────────────────────────────── -->
+        <aside class="identity-col">
+
+            <div class="identity-card" [style.--org-color]="org.color">
+                <div class="identity-card__bg" [style.background]="meshGradient"></div>
+
+                <!-- Org Logo / Initials -->
+                <div class="avatar-section">
+                    <div class="avatar-ring" [style.border-color]="org.color + '55'">
+                        <div class="avatar org-avatar" [style.background]="org.color">
+                            <span class="material-icons org-avatar__icon" *ngIf="!org.initials">business</span>
+                            <span *ngIf="org.initials">{{ org.initials }}</span>
+                        </div>
+                        <div class="avatar-status avatar-status--org"></div>
+                    </div>
+                    <span class="org-plan-badge" [style.background]="org.color + '18'" [style.color]="org.color">
+                        <span class="material-icons">workspace_premium</span>
+                        {{ org.plan }}
+                    </span>
+                </div>
+
+                <!-- Org identity info -->
+                <div class="identity-info">
+                    <h2 class="identity-name">{{ org.name || 'Organization Name' }}</h2>
+                    <span class="identity-handle">
+                        <span class="material-icons">link</span>
+                        {{ org.slug }}
+                    </span>
+                    <div class="identity-badges">
+                        <span class="industry-badge">{{ org.industry }}</span>
+                        <span class="joined-chip">
+                            <span class="material-icons">calendar_today</span>
+                            Since {{ org.createdAt }}
+                        </span>
+                    </div>
+                    <p class="identity-bio">{{ org.bio }}</p>
+                </div>
+
+                <!-- Stats -->
+                <div class="identity-stats">
+                    <div class="id-stat">
+                        <span class="id-stat__val" [style.color]="org.color">{{ org.employeeCount }}</span>
+                        <span class="id-stat__lbl">Members</span>
+                    </div>
+                    <div class="id-stat-div"></div>
+                    <div class="id-stat">
+                        <span class="id-stat__val" [style.color]="org.color">{{ org.projectCount }}</span>
+                        <span class="id-stat__lbl">Projects</span>
+                    </div>
+                    <div class="id-stat-div"></div>
+                    <div class="id-stat">
+                        <span class="id-stat__val" [style.color]="org.color">{{ org.teamCount }}</span>
+                        <span class="id-stat__lbl">Teams</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Info Card -->
+            <div class="info-card">
+                <h4 class="info-card__title">Quick Info</h4>
+                <ul class="info-list">
+                    <li class="info-item">
+                        <span class="info-item__icon si--indigo"><span class="material-icons">public</span></span>
+                        <div class="info-item__body">
+                            <span class="info-item__label">Website</span>
+                            <a class="info-item__val info-item__val--link" [href]="org.website" target="_blank">{{
+                                org.website }}</a>
+                        </div>
+                    </li>
+                    <li class="info-item">
+                        <span class="info-item__icon si--amber"><span class="material-icons">location_on</span></span>
+                        <div class="info-item__body">
+                            <span class="info-item__label">Headquarters</span>
+                            <span class="info-item__val">{{ org.location }}</span>
+                        </div>
+                    </li>
+                    <li class="info-item">
+                        <span class="info-item__icon si--green"><span class="material-icons">email</span></span>
+                        <div class="info-item__body">
+                            <span class="info-item__label">Contact Email</span>
+                            <span class="info-item__val">{{ org.contactEmail }}</span>
+                        </div>
+                    </li>
+                    <li class="info-item">
+                        <span class="info-item__icon si--rose"><span class="material-icons">phone</span></span>
+                        <div class="info-item__body">
+                            <span class="info-item__label">Phone</span>
+                            <span class="info-item__val">{{ org.phone }}</span>
+                        </div>
+                    </li>
+                    <li class="info-item">
+                        <span class="info-item__icon si--purple"><span
+                                class="material-icons">corporate_fare</span></span>
+                        <div class="info-item__body">
+                            <span class="info-item__label">Tax / Reg. ID</span>
+                            <span class="info-item__val">{{ org.taxId }}</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+        </aside>
+
+        <!-- ── RIGHT: Edit sections ──────────────────────────────── -->
+        <div class="edit-col">
+
+            <!-- General Info -->
+            <section class="edit-section" [class.edit-section--open]="activeSection === 'general'">
+                <div class="edit-section__head" (click)="toggleSection('general')">
+                    <div class="section-head-left">
+                        <div class="section-icon si--indigo"><span class="material-icons">business</span></div>
+                        <div>
+                            <h3 class="edit-section__title">General Info</h3>
+                            <p class="edit-section__sub">Organization name, slug and description</p>
+                        </div>
+                    </div>
+                    <span class="material-icons section-chevron"
+                        [class.section-chevron--open]="activeSection === 'general'">expand_more</span>
+                </div>
+
+                <div class="edit-section__body" *ngIf="activeSection === 'general'">
+                    <div class="form-grid">
+
+                        <div class="field field--full">
+                            <label class="field__label">Organization name</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">badge</span>
+                                <input type="text" class="field__input" placeholder="e.g. Acme Corp"
+                                    [(ngModel)]="org.name" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Slug / Handle</label>
+                            <div class="field__wrap field__wrap--slug">
+                                <span class="slug-prefix">vorta.io/</span>
+                                <input type="text" class="field__input field__input--slug" placeholder="acme-corp"
+                                    [(ngModel)]="org.slug" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Industry</label>
+                            <div class="field__wrap field__wrap--sel">
+                                <span class="material-icons field__icon">category</span>
+                                <select class="field__input field__select" [(ngModel)]="org.industry"
+                                    (ngModelChange)="onFieldChange()">
+                                    <option value="">Select industry</option>
+                                    <option>Technology</option>
+                                    <option>Finance</option>
+                                    <option>Healthcare</option>
+                                    <option>Education</option>
+                                    <option>Retail</option>
+                                    <option>Manufacturing</option>
+                                    <option>Consulting</option>
+                                    <option>Media & Entertainment</option>
+                                    <option>Other</option>
+                                </select>
+                                <span class="material-icons field__arr">unfold_more</span>
+                            </div>
+                        </div>
+
+                        <div class="field field--full">
+                            <label class="field__label">Bio / Description</label>
+                            <textarea class="field__input field__textarea"
+                                placeholder="Describe what your organization does…" [(ngModel)]="org.bio"
+                                (ngModelChange)="onFieldChange()" rows="3"></textarea>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Website</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">public</span>
+                                <input type="url" class="field__input" placeholder="https://yourcompany.com"
+                                    [(ngModel)]="org.website" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Headquarters</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">location_on</span>
+                                <input type="text" class="field__input" placeholder="City, Country"
+                                    [(ngModel)]="org.location" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Details -->
+            <section class="edit-section" [class.edit-section--open]="activeSection === 'contact'">
+                <div class="edit-section__head" (click)="toggleSection('contact')">
+                    <div class="section-head-left">
+                        <div class="section-icon si--green"><span class="material-icons">contacts</span></div>
+                        <div>
+                            <h3 class="edit-section__title">Contact Details</h3>
+                            <p class="edit-section__sub">Primary contact email, phone and address</p>
+                        </div>
+                    </div>
+                    <span class="material-icons section-chevron"
+                        [class.section-chevron--open]="activeSection === 'contact'">expand_more</span>
+                </div>
+
+                <div class="edit-section__body" *ngIf="activeSection === 'contact'">
+                    <div class="form-grid">
+
+                        <div class="field">
+                            <label class="field__label">Contact Email</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">email</span>
+                                <input type="email" class="field__input" placeholder="contact@company.com"
+                                    [(ngModel)]="org.contactEmail" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Phone Number</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">phone</span>
+                                <input type="tel" class="field__input" placeholder="+1 (555) 000-0000"
+                                    [(ngModel)]="org.phone" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field field--full">
+                            <label class="field__label">Street Address</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">home</span>
+                                <input type="text" class="field__input" placeholder="123 Main St, Suite 400"
+                                    [(ngModel)]="org.address" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">City</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">location_city</span>
+                                <input type="text" class="field__input" placeholder="San Francisco"
+                                    [(ngModel)]="org.city" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Postal Code</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">markunread_mailbox</span>
+                                <input type="text" class="field__input" placeholder="94105" [(ngModel)]="org.postalCode"
+                                    (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">State / Province</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">map</span>
+                                <input type="text" class="field__input" placeholder="California" [(ngModel)]="org.state"
+                                    (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Country</label>
+                            <div class="field__wrap field__wrap--sel">
+                                <span class="material-icons field__icon">flag</span>
+                                <select class="field__input field__select" [(ngModel)]="org.country"
+                                    (ngModelChange)="onFieldChange()">
+                                    <option value="">Select country</option>
+                                    <option>United States</option>
+                                    <option>United Kingdom</option>
+                                    <option>Canada</option>
+                                    <option>Germany</option>
+                                    <option>France</option>
+                                    <option>Australia</option>
+                                    <option>India</option>
+                                    <option>Pakistan</option>
+                                    <option>Other</option>
+                                </select>
+                                <span class="material-icons field__arr">unfold_more</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Legal & Billing -->
+            <section class="edit-section" [class.edit-section--open]="activeSection === 'legal'">
+                <div class="edit-section__head" (click)="toggleSection('legal')">
+                    <div class="section-head-left">
+                        <div class="section-icon si--amber"><span class="material-icons">gavel</span></div>
+                        <div>
+                            <h3 class="edit-section__title">Legal & Billing</h3>
+                            <p class="edit-section__sub">Tax ID, registration and billing info</p>
+                        </div>
+                    </div>
+                    <span class="material-icons section-chevron"
+                        [class.section-chevron--open]="activeSection === 'legal'">expand_more</span>
+                </div>
+
+                <div class="edit-section__body" *ngIf="activeSection === 'legal'">
+                    <div class="form-grid">
+
+                        <div class="field">
+                            <label class="field__label">Legal Entity Name</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">account_balance</span>
+                                <input type="text" class="field__input" placeholder="Acme Corp LLC"
+                                    [(ngModel)]="org.legalName" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Tax / VAT ID</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">corporate_fare</span>
+                                <input type="text" class="field__input" placeholder="US-123456789"
+                                    [(ngModel)]="org.taxId" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Registration Number</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">article</span>
+                                <input type="text" class="field__input" placeholder="REG-00000000"
+                                    [(ngModel)]="org.regNumber" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Billing Email</label>
+                            <div class="field__wrap"><span class="material-icons field__icon">receipt_long</span>
+                                <input type="email" class="field__input" placeholder="billing@company.com"
+                                    [(ngModel)]="org.billingEmail" (ngModelChange)="onFieldChange()" />
+                            </div>
+                        </div>
+
+                        <!-- Plan info banner -->
+                        <div class="field--full">
+                            <div class="plan-banner">
+                                <div class="plan-banner__left">
+                                    <span class="material-icons plan-banner__icon">workspace_premium</span>
+                                    <div>
+                                        <span class="plan-banner__name">{{ org.plan }} Plan</span>
+                                        <span class="plan-banner__renew">Renews on {{ org.planRenews }}</span>
+                                    </div>
+                                </div>
+                                <button class="btn-ghost btn-sm">
+                                    <span class="material-icons">upgrade</span>Upgrade
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Members & Access -->
+            <section class="edit-section" [class.edit-section--open]="activeSection === 'members'">
+                <div class="edit-section__head" (click)="toggleSection('members')">
+                    <div class="section-head-left">
+                        <div class="section-icon si--purple"><span class="material-icons">group</span></div>
+                        <div>
+                            <h3 class="edit-section__title">Members & Access</h3>
+                            <p class="edit-section__sub">Seats used, roles and invite settings</p>
+                        </div>
+                    </div>
+                    <span class="material-icons section-chevron"
+                        [class.section-chevron--open]="activeSection === 'members'">expand_more</span>
+                </div>
+
+                <div class="edit-section__body" *ngIf="activeSection === 'members'">
+                    <div class="form-grid">
+
+                        <!-- Seat usage bar -->
+                        <div class="field--full">
+                            <div class="seat-usage">
+                                <div class="seat-usage__header">
+                                    <span class="seat-usage__label">Seats used</span>
+                                    <span class="seat-usage__count">{{ org.seatsUsed }} / {{ org.seatsTotal }}</span>
+                                </div>
+                                <div class="seat-usage__bar">
+                                    <div class="seat-usage__fill"
+                                        [style.width]="(org.seatsUsed / org.seatsTotal * 100) + '%'"
+                                        [class.seat-usage__fill--warn]="org.seatsUsed / org.seatsTotal > 0.8"></div>
+                                </div>
+                                <span class="seat-usage__sub">{{ org.seatsTotal - org.seatsUsed }} seats remaining on
+                                    your plan</span>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Default member role</label>
+                            <div class="field__wrap field__wrap--sel">
+                                <span class="material-icons field__icon">manage_accounts</span>
+                                <select class="field__input field__select" [(ngModel)]="org.defaultRole"
+                                    (ngModelChange)="onFieldChange()">
+                                    <option>Viewer</option>
+                                    <option>Member</option>
+                                    <option>Editor</option>
+                                    <option>Admin</option>
+                                </select>
+                                <span class="material-icons field__arr">unfold_more</span>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field__label">Invite link expiry</label>
+                            <div class="field__wrap field__wrap--sel">
+                                <span class="material-icons field__icon">timer</span>
+                                <select class="field__input field__select" [(ngModel)]="org.inviteExpiry"
+                                    (ngModelChange)="onFieldChange()">
+                                    <option>24 hours</option>
+                                    <option>3 days</option>
+                                    <option>7 days</option>
+                                    <option>30 days</option>
+                                    <option>Never</option>
+                                </select>
+                                <span class="material-icons field__arr">unfold_more</span>
+                            </div>
+                        </div>
+
+                        <!-- Toggle rows -->
+                        <div class="field--full">
+                            <div class="toggle-list">
+                                <div class="toggle-row">
+                                    <div class="toggle-row__info">
+                                        <span class="toggle-row__label">Allow public sign-up</span>
+                                        <span class="toggle-row__desc">Anyone with the link can join without an explicit
+                                            invite</span>
+                                    </div>
+                                    <button class="toggle-switch" [class.toggle-switch--on]="org.allowPublicSignup"
+                                        (click)="org.allowPublicSignup = !org.allowPublicSignup; onFieldChange()">
+                                        <div class="toggle-thumb"></div>
+                                    </button>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-row__info">
+                                        <span class="toggle-row__label">Require admin approval</span>
+                                        <span class="toggle-row__desc">New members must be approved by an admin before
+                                            accessing</span>
+                                    </div>
+                                    <button class="toggle-switch" [class.toggle-switch--on]="org.requireAdminApproval"
+                                        (click)="org.requireAdminApproval = !org.requireAdminApproval; onFieldChange()">
+                                        <div class="toggle-thumb"></div>
+                                    </button>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-row__info">
+                                        <span class="toggle-row__label">Two-factor auth enforcement</span>
+                                        <span class="toggle-row__desc">Require all members to enable 2FA to access the
+                                            org</span>
+                                    </div>
+                                    <button class="toggle-switch" [class.toggle-switch--on]="org.enforce2FA"
+                                        (click)="org.enforce2FA = !org.enforce2FA; onFieldChange()">
+                                        <div class="toggle-thumb"></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Danger Zone -->
+            <section class="edit-section edit-section--danger" [class.edit-section--open]="activeSection === 'danger'">
+                <div class="edit-section__head" (click)="toggleSection('danger')">
+                    <div class="section-head-left">
+                        <div class="section-icon si--rose"><span class="material-icons">warning</span></div>
+                        <div>
+                            <h3 class="edit-section__title">Danger Zone</h3>
+                            <p class="edit-section__sub">Irreversible actions — proceed with caution</p>
+                        </div>
+                    </div>
+                    <span class="material-icons section-chevron"
+                        [class.section-chevron--open]="activeSection === 'danger'">expand_more</span>
+                </div>
+
+                <div class="edit-section__body" *ngIf="activeSection === 'danger'">
+                    <div class="danger-actions">
+                        <div class="danger-row">
+                            <div class="danger-row__info">
+                                <span class="danger-row__label">Transfer ownership</span>
+                                <span class="danger-row__desc">Transfer this organization to another admin member</span>
+                            </div>
+                            <button class="btn-danger-outline btn-sm" (click)="onTransferOwnership()">
+                                <span class="material-icons">swap_horiz</span>Transfer
+                            </button>
+                        </div>
+                        <div class="danger-row">
+                            <div class="danger-row__info">
+                                <span class="danger-row__label">Delete organization</span>
+                                <span class="danger-row__desc">Permanently delete the org, all projects, and member
+                                    data</span>
+                            </div>
+                            <button class="btn-danger btn-sm" (click)="onDeleteOrg()">
+                                <span class="material-icons">delete_forever</span>Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Save success banner -->
+            <div class="save-banner" *ngIf="saveSuccess">
+                <span class="material-icons">check_circle</span>
+                Organization settings saved successfully!
+            </div>
+
+        </div>
+    </main>
+</div>

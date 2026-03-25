@@ -14,6 +14,7 @@ import { Settings } from './settings/settings';
 import { LoginComponent } from './login/login';
 import { Member } from './member/member';
 import { TeamComponent } from './team-component/team-component';
+import { OrganizationComponent } from './organization/organization';
 
 export const routes: Routes = [
 
@@ -56,6 +57,9 @@ export const routes: Routes = [
       // Profile & Settings
       { path: 'profile', component: Profile },
       { path: 'settings', component: Settings },
+
+      // Organization
+      { path: 'organization', component: OrganizationComponent }
     ]
   },
 

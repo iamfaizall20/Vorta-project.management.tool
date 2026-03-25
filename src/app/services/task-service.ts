@@ -16,7 +16,7 @@ export class TaskService {
   }
 
   getTasks(id: number): Observable<any> {
-    return this.http.post('http://localhost/VortaAppApis/tasks/get.php?',
+    return this.http.post('http://localhost/VortaAppApis/tasks/get.php',
       {
         user_id: id
       })

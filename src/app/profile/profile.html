@@ -34,19 +34,6 @@
                         <div class="avatar" [style.background]="profile.color">{{ profile.initials }}</div>
                         <div class="avatar-status"></div>
                     </div>
-                    <div class="color-picker-wrap">
-                        <button class="color-pick-btn" (click)="showColorPicker = !showColorPicker">
-                            <span class="material-icons">palette</span>Colour
-                        </button>
-                        <div class="cpd" *ngIf="showColorPicker">
-                            <div class="cpd__swatches">
-                                <button class="cpd__swatch" *ngFor="let c of colorOptions" [style.background]="c"
-                                    [class.cpd__swatch--active]="profile.color === c" (click)="setColor(c)">
-                                    <span class="material-icons" *ngIf="profile.color === c">check</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Identity info -->
@@ -80,23 +67,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Activity -->
-            <div class="activity-card">
-                <h3 class="activity-card__title">Recent Activity</h3>
-                <div class="activity-list">
-                    <div class="activity-item" *ngFor="let a of recentActivity">
-                        <div class="activity-icon" [style.background]="a.iconBg" [style.color]="a.iconColor">
-                            <span class="material-icons">{{ a.icon }}</span>
-                        </div>
-                        <div class="activity-body">
-                            <span class="activity-text">{{ a.text }}</span>
-                            <span class="activity-time">{{ a.time }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </aside>
 
         <!-- ── RIGHT: Edit sections ──────────────────────────────── -->
@@ -156,39 +126,6 @@
                             <textarea class="field__input field__textarea" placeholder="Tell your team about yourself…"
                                 [(ngModel)]="profile.bio" (ngModelChange)="onFieldChange()" rows="3"></textarea>
                         </div>
-
-                        <div class="field">
-                            <label class="field__label">Timezone</label>
-                            <div class="field__wrap field__wrap--sel">
-                                <span class="material-icons field__icon">public</span>
-                                <select class="field__input field__select" [(ngModel)]="profile.timezone"
-                                    (ngModelChange)="onFieldChange()">
-                                    <option value="PKT">Pakistan (PKT, UTC+5)</option>
-                                    <option value="UTC">UTC</option>
-                                    <option value="EST">Eastern (EST, UTC-5)</option>
-                                    <option value="PST">Pacific (PST, UTC-8)</option>
-                                    <option value="GMT">London (GMT)</option>
-                                    <option value="IST">India (IST, UTC+5:30)</option>
-                                </select>
-                                <span class="material-icons field__arr">expand_more</span>
-                            </div>
-                        </div>
-
-                        <div class="field">
-                            <label class="field__label">Language</label>
-                            <div class="field__wrap field__wrap--sel">
-                                <span class="material-icons field__icon">translate</span>
-                                <select class="field__input field__select" [(ngModel)]="profile.language"
-                                    (ngModelChange)="onFieldChange()">
-                                    <option value="en">English</option>
-                                    <option value="ur">Urdu</option>
-                                    <option value="ar">Arabic</option>
-                                    <option value="fr">French</option>
-                                </select>
-                                <span class="material-icons field__arr">expand_more</span>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </section>
@@ -272,36 +209,6 @@
                             </button>
                         </div>
 
-                    </div>
-                </div>
-            </section>
-
-            <!-- Notifications -->
-            <section class="edit-section" [class.edit-section--open]="activeSection === 'notifications'">
-                <div class="edit-section__head" (click)="toggleSection('notifications')">
-                    <div class="section-head-left">
-                        <div class="section-icon si--green"><span class="material-icons">notifications</span></div>
-                        <div>
-                            <h3 class="edit-section__title">Notifications</h3>
-                            <p class="edit-section__sub">Choose what alerts you receive</p>
-                        </div>
-                    </div>
-                    <span class="material-icons section-chevron"
-                        [class.section-chevron--open]="activeSection === 'notifications'">expand_more</span>
-                </div>
-
-                <div class="edit-section__body" *ngIf="activeSection === 'notifications'">
-                    <div class="toggle-list">
-                        <div class="toggle-row" *ngFor="let n of notifPrefs">
-                            <div class="toggle-row__info">
-                                <span class="toggle-row__label">{{ n.label }}</span>
-                                <span class="toggle-row__desc">{{ n.desc }}</span>
-                            </div>
-                            <button class="toggle-switch" [class.toggle-switch--on]="n.enabled"
-                                (click)="n.enabled = !n.enabled; onFieldChange()">
-                                <div class="toggle-thumb"></div>
-                            </button>
-                        </div>
                     </div>
                 </div>
             </section>

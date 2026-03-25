@@ -71,15 +71,14 @@ export class Sidebar implements OnInit {
   }
 
   updateNavBadge() {
+    console.log("Badge function called");
     const taskItem = this.mainNav.find(item => item.label === 'My Tasks');
     if (taskItem) {
       taskItem.badge = this.taskCount;
+
     }
   }
 
-  /**
-   * Handle dialog closed event
-   */
   onDialogClosed(): void {
     console.log('Team creation dialog closed');
   }
@@ -98,12 +97,14 @@ export class Sidebar implements OnInit {
   }
 
   countTasks() {
+    console.log("Count function called");
 
-    const userId = JSON.parse(localStorage.getItem('user_id')!);
+    const user = JSON.parse(localStorage.getItem('user')!);
 
-    this.taskService.getTasks(userId).subscribe({
+    this.taskService.getTasks(user.user_id).subscribe({
       next: (res: any) => {
-        this.countTasks = res.tasks.length;
+        this.taskCount = res.tasks?.length || 0;
+        console.log("API Called");
 
         this.updateNavBadge();
       },
@@ -185,6 +186,6 @@ export class Sidebar implements OnInit {
   }
 
   onOrgClick(): void {
-    // this.router.navigate(['/app/organization']);
+    this.router.navigate(['/app/organization']);
   }
 }

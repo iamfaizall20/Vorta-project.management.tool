@@ -39,6 +39,7 @@ export interface ProjectStats {
   inProgress: number;
   done: number;
   completedTasks: number;
+  blocked: number
 }
 
 export interface Project {
@@ -90,6 +91,7 @@ export class ProjectDetail implements OnInit {
   showCreateTask = false;
   selectedTask: Task | null = null;
   taskCreating = false;
+  isUserAdmin: boolean = false;
   today = new Date().toISOString().split('T')[0];
 
   // Team tabs
@@ -137,6 +139,13 @@ export class ProjectDetail implements OnInit {
 
   // ───────────────── Init ─────────────────
   ngOnInit(): void {
+
+    // Checking User Role
+    const user = JSON.parse(localStorage.getItem('user')!);
+    if (user.role === 'admin') {
+      this.isUserAdmin = true;
+    }
+
     console.log('🚀 ProjectDetail component initialized');
     const id = this.route.snapshot.paramMap.get('id');
     const organizationId = localStorage.getItem('organization_id');
@@ -548,9 +557,9 @@ export class ProjectDetail implements OnInit {
     const oldStatus = task.status;
     task.status = status;
 
-    const taskId = task.id.includes('-') ? Number(task.id.split('-')[1]) : Number(task.id);
+    // const taskId = task.id.includes('-') ? Number(task.id.split('-')[1]) : Number(task.id);
 
-    this.taskService.updateTaskStatus(taskId, status).subscribe({
+    this.taskService.updateTaskStatus(task.id, status).subscribe({
       next: () => {
         if (this.selectedTask?.id === task.id) {
           this.selectedTask = { ...task };
@@ -601,17 +610,45 @@ export class ProjectDetail implements OnInit {
   onDeleteTask(task: Task): void {
     if (!this.project) return;
 
-    this.project.teams.forEach(team => {
-      team.tasks = team.tasks.filter(t => t.id !== task.id);
+    // Ask for confirmation before deletion
+    const confirmed = confirm("Delete the Task??");
+    if (!confirmed) return;
+
+    // Call the backend API to delete the task
+    this.taskService.deleteTask(task.id).subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          // Remove the task from all teams in the project
+          this.project!.teams.forEach(team => {
+            team.tasks = team.tasks.filter(t => t.id !== task.id);
+          });
+
+          // Clear selected task if it was the deleted one
+          if (this.selectedTask?.id === task.id) {
+            this.selectedTask = null;
+          }
+
+          // Recalculate project stats
+          if (!this.project || !this.project.teams) return;
+
+          const allTasks = this.project.teams.flatMap(t => t.tasks);
+
+          this.project.stats.totalTasks = allTasks.length;
+          this.project.stats.completedTasks = allTasks.filter(t => t.status === 'done').length;
+          this.project.stats.todo = allTasks.filter(t => t.status === 'todo').length;
+          this.project.stats.inProgress = allTasks.filter(t => t.status === 'inprogress').length;
+          this.project.stats.blocked = allTasks.filter(t => t.status === 'blocked').length;
+
+          alert('Task Deleted Successfully');
+        } else {
+          alert('Failed to delete task');
+        }
+      },
+      error: (err) => {
+        console.error('Delete task error:', err);
+        alert('An error occurred while deleting the task');
+      }
     });
-
-    this.selectedTask = null;
-
-    const allTasks = this.project.teams.flatMap(t => t.tasks);
-    this.project.stats.totalTasks = allTasks.length;
-    this.project.stats.completedTasks = allTasks.filter(t => t.status === 'done').length;
-    this.project.stats.todo = allTasks.filter(t => t.status === 'todo').length;
-    this.project.stats.inProgress = allTasks.filter(t => t.status === 'inprogress').length;
   }
 
   openTaskDetail(task: Task): void {

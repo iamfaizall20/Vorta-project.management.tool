@@ -41,7 +41,7 @@ export class ProjectList implements OnInit {
   searchQuery = '';
   searchFocused = false;
   activeFilter = 'all';
-  viewMode: 'grid' | 'list' = 'grid';
+  viewMode: 'grid' | 'list' = 'list';
   sortBy: 'name' | 'status' | 'progress' | 'dueDate' = 'name';
   isLoading = true;
 

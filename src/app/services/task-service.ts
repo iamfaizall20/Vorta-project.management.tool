@@ -22,7 +22,7 @@ export class TaskService {
       })
   }
 
-  updateTaskStatus(taskId: number, status: string) {
+  updateTaskStatus(taskId: string, status: string) {
     return this.http.post(
       'http://localhost/VortaAppApis/tasks/update-status.php',
       {
@@ -30,5 +30,9 @@ export class TaskService {
         status: status
       }
     );
+  }
+
+  deleteTask(taskId: string) {
+    return this.http.post('http://localhost/VortaAppApis/tasks/delete.php', { task_id: taskId });
   }
 }

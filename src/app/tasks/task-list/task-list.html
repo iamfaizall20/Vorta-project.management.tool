@@ -1,7 +1,7 @@
 <div class="tasks-page">
 
   <!-- ── Topbar ─────────────────────────────────────────────── -->
-  <header class="topbar">
+  <!-- <header class="topbar">
     <div class="topbar__left">
       <nav class="breadcrumb">
         <a class="breadcrumb__item" routerLink="/app">Home</a>
@@ -9,7 +9,7 @@
         <span class="breadcrumb__item breadcrumb__item--active">My Tasks</span>
       </nav>
     </div>
-  </header>
+  </header> -->
 
   <!-- ── Main ───────────────────────────────────────────────── -->
   <main class="tasks-main">
@@ -89,10 +89,6 @@
           <button class="view-btn" [class.view-btn--active]="viewMode === 'kanban'" (click)="viewMode = 'kanban'"
             title="Kanban">
             <span class="material-icons">view_kanban</span>
-          </button>
-          <button class="view-btn" [class.view-btn--active]="viewMode === 'calendar'" (click)="viewMode = 'calendar'"
-            title="Calendar">
-            <span class="material-icons">calendar_month</span>
           </button>
         </div>
 
@@ -300,51 +296,6 @@
         </div>
       </div>
 
-      <!-- ══════════════════════════════════════════════════════
-             CALENDAR VIEW
-        ══════════════════════════════════════════════════════ -->
-      <div class="calendar-view" *ngIf="viewMode === 'calendar'">
-        <!-- Calendar nav -->
-        <div class="cal-nav">
-          <button class="cal-nav-btn" (click)="prevMonth()">
-            <span class="material-icons">chevron_left</span>
-          </button>
-          <span class="cal-nav-month">{{ calMonthLabel }}</span>
-          <button class="cal-nav-btn" (click)="nextMonth()">
-            <span class="material-icons">chevron_right</span>
-          </button>
-          <button class="cal-today-btn" (click)="goToToday()">Today</button>
-        </div>
-
-        <!-- Day headers -->
-        <div class="cal-day-headers">
-          <div class="cal-day-header" *ngFor="let d of dayHeaders">{{ d }}</div>
-        </div>
-
-        <!-- Calendar grid -->
-        <div class="cal-grid">
-          <div class="cal-cell" *ngFor="let cell of calendarCells" [class.cal-cell--other-month]="!cell.isCurrentMonth"
-            [class.cal-cell--today]="cell.isToday">
-
-            <div class="cal-cell__date" [class.cal-cell__date--today]="cell.isToday">
-              {{ cell.day }}
-            </div>
-
-            <div class="cal-cell__tasks">
-              <div class="cal-task" *ngFor="let t of cell.tasks.slice(0, 3)" [class]="'cal-task--' + t.priority"
-                [class.cal-task--done]="t.status === 'done'" (click)="openDetail(t)" [title]="t.title">
-                <span class="cal-task__dot"></span>
-                <span class="cal-task__name">{{ t.title }}</span>
-              </div>
-              <div class="cal-task-more" *ngIf="cell.tasks.length > 3" (click)="openDayTasks(cell)">
-                +{{ cell.tasks.length - 3 }} more
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
     </ng-container>
 
   </main>
@@ -448,125 +399,8 @@
           <span class="drawer-field__label">Created</span>
           <span class="drawer-created">{{ selectedTask.createdAt | date: 'MMM d, y' }}</span>
         </div>
-
-        <!-- Actions -->
-        <div class="drawer-actions">
-          <button class="btn-ghost btn-sm" (click)="onEditTask(selectedTask)">
-            <span class="material-icons">edit</span>Edit
-          </button>
-          <button class="btn-danger btn-sm" (click)="onDeleteTask(selectedTask)">
-            <span class="material-icons">delete_outline</span>Delete
-          </button>
-        </div>
-
       </div>
     </ng-container>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════
-     CREATE TASK DRAWER
-══════════════════════════════════════════════════════ -->
-  <div class="drawer-backdrop" *ngIf="showCreate" (click)="closeCreate()"></div>
-  <div class="drawer drawer--create" [class.drawer--open]="showCreate">
-    <div class="drawer__head drawer__head--row">
-      <h2 class="drawer__title">New Task</h2>
-      <button class="icon-btn" type="button" (click)="closeCreate()">
-        <span class="material-icons">close</span>
-      </button>
-    </div>
-
-    <div class="drawer__body">
-      <form #taskForm="ngForm" (ngSubmit)="onCreateTask(taskForm)" class="create-form" novalidate>
-
-        <!-- Title -->
-        <div class="field" [class.field--error]="titleRef.invalid && titleRef.touched">
-          <label class="field__label">Title <span class="field__req">*</span></label>
-          <input name="title" type="text" class="field__input" placeholder="What needs to be done?"
-            [(ngModel)]="draft.title" #titleRef="ngModel" required minlength="2" />
-          <span class="field__msg" *ngIf="titleRef.touched && titleRef.errors?.['required']">
-            Title is required.
-          </span>
-        </div>
-
-        <!-- Description -->
-        <div class="field">
-          <label class="field__label">Description</label>
-          <textarea name="description" class="field__input field__textarea" rows="3" placeholder="Add more context…"
-            [(ngModel)]="draft.description">
-          </textarea>
-        </div>
-
-        <!-- Project -->
-        <div class="field">
-          <label class="field__label">Project</label>
-          <div class="field__wrap field__wrap--sel">
-            <span class="material-icons field__icon">folder_open</span>
-            <select name="projectId" class="field__input field__select" [(ngModel)]="draft.projectId"
-              (change)="onProjectChange()">
-              <option value="">— No project —</option>
-              <option *ngFor="let p of allProjects" [value]="p.id">
-                {{ p.name }}
-              </option>
-            </select>
-            <span class="material-icons field__arr">expand_more</span>
-          </div>
-        </div>
-
-        <!-- Priority -->
-        <div class="field">
-          <label class="field__label">Priority</label>
-          <div class="priority-options">
-            <button type="button" class="popt" *ngFor="let p of priorityOptions"
-              [class.popt--active]="draft.priority === p.value" (click)="draft.priority = p.value">
-              <span class="material-icons">{{ p.icon }}</span>
-              {{ p.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Status -->
-        <div class="field">
-          <label class="field__label">Status</label>
-          <div class="field__wrap field__wrap--sel">
-            <span class="material-icons field__icon">flag</span>
-            <select name="status" class="field__input field__select" [(ngModel)]="draft.status">
-              <option value="todo">To Do</option>
-              <option value="inprogress">In Progress</option>
-              <option value="blocked">Blocked</option>
-            </select>
-            <span class="material-icons field__arr">expand_more</span>
-          </div>
-        </div>
-
-        <!-- Due date -->
-        <div class="field">
-          <label class="field__label">Due date</label>
-          <div class="field__wrap">
-            <span class="material-icons field__icon">calendar_today</span>
-            <input name="dueDate" type="date" class="field__input field__date" [(ngModel)]="draft.dueDate" [min]="today"
-              style="padding-left: 38px;" />
-          </div>
-        </div>
-
-        <!-- Create error -->
-        <div class="form-error" *ngIf="createError">
-          <span class="material-icons">error_outline</span>
-          {{ createError }}
-        </div>
-
-        <div class="form-actions">
-          <button type="button" class="btn-ghost btn-sm" (click)="closeCreate()">
-            Cancel
-          </button>
-          <button type="submit" class="btn-primary btn-sm" [disabled]="taskForm.invalid || creating">
-            <span class="spinner" *ngIf="creating"></span>
-            <span class="material-icons" *ngIf="!creating">add</span>
-            {{ creating ? 'Adding…' : 'Add Task' }}
-          </button>
-        </div>
-
-      </form>
-    </div>
   </div>
 
   <!-- Day tasks popup (calendar) -->

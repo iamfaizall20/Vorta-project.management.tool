@@ -43,8 +43,6 @@ export const routes: Routes = [
 
       // Tasks
       { path: 'tasks', component: TaskList },
-
-      // Teams — single page, drawers handle create/detail internally
       { path: 'teams', component: TeamList },
       { path: 'team/new', component: TeamComponent },
 

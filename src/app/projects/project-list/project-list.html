@@ -175,7 +175,7 @@
                     <span class="lh-col">Status</span>
                     <span class="lh-col">Priority</span>
                     <span class="lh-col">Progress</span>
-                    <span class="lh-col">Team</span>
+                    <span class="lh-col">Members</span>
                     <span class="lh-col">Due</span>
                     <span class="lh-col"></span>
                 </div>
@@ -218,9 +218,6 @@
                         <div class="team-info-list">
                             <span class="material-icons team-icon-sm">people</span>
                             <span>{{ getTotalMembers(p) }}</span>
-                            <span class="team-separator" *ngIf="getTotalTeams(p) > 0">·</span>
-                            <span *ngIf="getTotalTeams(p) > 0">{{ getTotalTeams(p) }} team{{ getTotalTeams(p) !== 1 ?
-                                's' : '' }}</span>
                         </div>
                     </div>
 

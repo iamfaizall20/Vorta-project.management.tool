@@ -46,7 +46,7 @@ export class TaskList implements OnInit {
   // ── State ──────────────────────────────────────────────────
   tasks: FlatTask[] = [];
   allProjects: { id: string; name: string; members?: { id: string; name: string }[] }[] = [];
-  viewMode: 'list' | 'kanban' | 'calendar' = 'list';
+  viewMode: 'list' | 'kanban' = 'kanban';
   searchQuery = '';
   searchFocused = false;
   activePriority = 'all';
@@ -356,7 +356,7 @@ export class TaskList implements OnInit {
     if (this.selectedTask?.id === t.id) this.selectedTask = { ...t };
 
     // Persist via API
-    this.taskService.updateTaskStatus(Number(t.id), status).subscribe({
+    this.taskService.updateTaskStatus(t.id, status).subscribe({
       error: (err) => console.error('updateTaskStatus error:', err)
     });
   }
@@ -392,78 +392,6 @@ export class TaskList implements OnInit {
     this.showCreate = false;
     this.createError = null;
     this.createSuccess = null;
-  }
-
-  // ── Create task via API ───────────────────────────────────
-  onCreateTask(form: NgForm): void {
-    if (form.invalid) return;
-
-    this.creating = true;
-    this.createError = null;
-    this.createSuccess = null;
-
-    const payload = {
-      title: this.draft.title.trim(),
-      description: this.draft.description.trim(),
-      priority: this.draft.priority,
-      status: this.draft.status,
-      project_id: Number(this.draft.projectId),
-      user_id: Number(this.draft.assigneeId),
-      due_date: this.draft.dueDate || null,
-    };
-
-    this.taskService.createTask(payload).subscribe({
-      next: (res: any) => {
-        if (res?.success && res.task_id) {
-          const project = this.allProjects.find(p => p.id === this.draft.projectId);
-          const assignee = this.projectMembers.find(u => u.id === this.draft.assigneeId);
-
-          const newTask: FlatTask = {
-            id: String(res.task_id),
-            projectId: this.draft.projectId,
-            projectName: project?.name ?? '',
-            teamName: '',
-            title: payload.title,
-            description: payload.description,
-            priority: this.draft.priority,
-            status: this.draft.status,
-            dueDate: this.draft.dueDate,
-            createdAt: new Date().toISOString(),
-            assignee: assignee ? { id: assignee.id, name: assignee.name } : null,
-          };
-
-          // Optimistic update
-          this.tasks = [newTask, ...this.tasks];
-
-          this.creating = false;
-          this.showCreate = false;
-          this.createSuccess = 'Task created successfully!';
-          setTimeout(() => { this.createSuccess = null; }, 3000);
-
-          // Reload from API to get fresh server state including team_name
-          this.loadTasks();
-
-        } else {
-          this.createError = res?.message ?? 'Failed to create task.';
-          this.creating = false;
-        }
-      },
-      error: (err) => {
-        this.createError = err?.error?.message || 'Network error. Please try again.';
-        this.creating = false;
-      }
-    });
-  }
-
-  onEditTask(t: FlatTask): void {
-    const idx = this.tasks.findIndex(x => x.id === t.id);
-    if (idx !== -1) this.tasks[idx] = { ...t };
-  }
-
-  // ── Delete task ───────────────────────────────────────────
-  onDeleteTask(t: FlatTask): void {
-    this.tasks = this.tasks.filter(x => x.id !== t.id);
-    if (this.selectedTask?.id === t.id) this.selectedTask = null;
   }
 
   clearFilters(): void {

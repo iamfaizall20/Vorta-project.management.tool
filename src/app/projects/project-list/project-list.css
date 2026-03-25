@@ -828,11 +828,11 @@
 }
 
 .lh-col--name {
-  gap: 10px;
+  gap: 12px;
 }
 
 .lh-col--progress {
-  gap: 8px;
+  gap: 12px;
 }
 
 .lh-col--actions {
@@ -860,9 +860,9 @@
 }
 
 .list-dot {
-  width: 10px;
-  height: 10px;
-  min-width: 10px;
+  width: 5px;
+  height: 5px;
+  min-width: 5px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -884,10 +884,11 @@
 }
 
 .list-project-desc {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
+  max-width: 280px;
   text-overflow: ellipsis;
 }
 

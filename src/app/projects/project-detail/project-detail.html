@@ -1,7 +1,7 @@
 <div class="project-detail" *ngIf="project; else loading">
 
     <!-- ── Topbar ─────────────────────────────────────────────── -->
-    <header class="topbar">
+    <header class="topbar" *ngIf="isUserAdmin">
         <div class="topbar__left">
             <nav class="breadcrumb">
                 <a class="breadcrumb__item" routerLink="/app">Vorta</a>
@@ -11,7 +11,7 @@
                 <span class="breadcrumb__item breadcrumb__item--active">{{ project.name }}</span>
             </nav>
         </div>
-        <div class="topbar__right">
+        <div class="topbar__right" *ngIf="isUserAdmin">
             <button class="btn-ghost btn-sm" (click)="onEditProject()">
                 <span class="material-icons">edit</span>
                 Edit

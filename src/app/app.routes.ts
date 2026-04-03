@@ -15,6 +15,7 @@ import { LoginComponent } from './login/login';
 import { Member } from './member/member';
 import { TeamComponent } from './team-component/team-component';
 import { OrganizationComponent } from './organization/organization';
+import { authGuard } from './guards/auth-guard';
 
 export const routes: Routes = [
 
@@ -27,6 +28,7 @@ export const routes: Routes = [
   {
     path: 'app',
     component: AppShell,
+    canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: Dashboard },

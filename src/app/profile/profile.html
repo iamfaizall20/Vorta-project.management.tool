@@ -10,6 +10,10 @@
             </nav>
         </div>
         <div class="topbar__right">
+            <button class="btn-ghost btn-sm" (click)="openLogoutModal()">
+                <span class="material-icons">logout</span>
+                Logout
+            </button>
             <button class="btn-ghost btn-sm" (click)="onCancel()" *ngIf="isDirty">Discard</button>
             <button class="btn-primary btn-sm" (click)="onSave()" [disabled]="saving" [class.btn--loading]="saving">
                 <span class="spinner" *ngIf="saving"></span>
@@ -109,7 +113,7 @@
                             <label class="field__label">Email address</label>
                             <div class="field__wrap"><span class="material-icons field__icon">email</span>
                                 <input type="email" class="field__input" placeholder="you@company.com"
-                                    [(ngModel)]="profile.email" (ngModelChange)="onFieldChange()" />
+                                    [(ngModel)]="profile.email" readonly />
                             </div>
                         </div>
 
@@ -117,7 +121,7 @@
                             <label class="field__label">Job title</label>
                             <div class="field__wrap"><span class="material-icons field__icon">work</span>
                                 <input type="text" class="field__input" placeholder="e.g. Senior Engineer"
-                                    [(ngModel)]="profile.jobTitle" (ngModelChange)="onFieldChange()" />
+                                    [(ngModel)]="profile.jobTitle" readonly />
                             </div>
                         </div>
 
@@ -196,29 +200,74 @@
                                         }}</span>
                                 </button>
                             </div>
-                            <span class="field__msg"
-                                *ngIf="passwords.confirm && passwords.new !== passwords.confirm">Passwords do not
-                                match.</span>
+                            <span class="field__msg" *ngIf="passwords.confirm && passwords.new !== passwords.confirm">
+                                Passwords do not match.
+                            </span>
                         </div>
 
+                        <!-- ── Update Password button ──────────────── -->
                         <div class="field--full">
                             <button class="btn-primary btn-sm"
-                                [disabled]="!passwords.current || !passwords.new || passwords.new !== passwords.confirm"
+                                [disabled]="pwdSaving || !passwords.current || !passwords.new || passwords.new !== passwords.confirm"
                                 (click)="onChangePassword()">
-                                <span class="material-icons">lock_reset</span>Update Password
+                                <span class="spinner" *ngIf="pwdSaving"></span>
+                                <span class="material-icons" *ngIf="!pwdSaving">lock_reset</span>
+                                {{ pwdSaving ? 'Updating…' : 'Update Password' }}
                             </button>
+                        </div>
+
+                        <!-- ── Password success banner ─────────────── -->
+                        <div class="save-banner field--full" *ngIf="pwdSuccess">
+                            <span class="material-icons">check_circle</span>
+                            Password updated successfully!
+                        </div>
+
+                        <!-- ── Password error banner ───────────────── -->
+                        <div class="save-banner save-banner--error field--full" *ngIf="pwdError">
+                            <span class="material-icons">error_outline</span>
+                            {{ pwdErrorMessage }}
                         </div>
 
                     </div>
                 </div>
             </section>
 
-            <!-- Save success banner -->
+            <!-- ── Profile save success banner ──────────────────── -->
             <div class="save-banner" *ngIf="saveSuccess">
                 <span class="material-icons">check_circle</span>
                 Profile saved successfully!
             </div>
 
+            <!-- ── Profile save error banner ─────────────────────── -->
+            <div class="save-banner save-banner--error" *ngIf="saveError">
+                <span class="material-icons">error_outline</span>
+                {{ saveErrorMessage }}
+            </div>
+
+        </div>
+        <!-- ── Logout Modal ───────────────────────────────────── -->
+        <div class="modal-backdrop" *ngIf="showLogoutModal">
+            <div class="modal">
+                <div class="modal__icon">
+                    <span class="material-icons">logout</span>
+                </div>
+
+                <h3 class="modal__title">Confirm Logout</h3>
+                <p class="modal__desc">
+                    Are you sure you want to log out of your account?
+                </p>
+
+                <div class="modal__actions">
+                    <button class="btn-ghost btn-sm" (click)="closeLogoutModal()">
+                        Cancel
+                    </button>
+
+                    <button class="btn-danger btn-sm" (click)="logout()">
+                        <span class="material-icons">logout</span>
+                        Logout
+                    </button>
+                </div>
+            </div>
         </div>
     </main>
 </div>

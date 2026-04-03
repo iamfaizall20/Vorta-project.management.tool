@@ -1,7 +1,7 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 
@@ -32,7 +32,7 @@ interface UserProfile {
 })
 export class Profile implements OnInit {
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private router: Router) { }
 
   // ── Profile data ───────────────────────────────────────────
   profile: UserProfile = {
@@ -51,12 +51,13 @@ export class Profile implements OnInit {
     teamCount: 0
   };
 
-
   // ── UI state ───────────────────────────────────────────────
   activeSection: 'personal' | 'password' | 'notifications' | null = 'personal';
   isDirty = false;
   saving = false;
   saveSuccess = false;
+  saveError = false;
+  saveErrorMessage = '';
   showColorPicker = false;
 
   // ── Password fields ────────────────────────────────────────
@@ -65,6 +66,13 @@ export class Profile implements OnInit {
   showNewPwd = false;
   showConfirmPwd = false;
   pwdStrength = { pct: 0, label: '', color: '' };
+
+  // ── Password UI state (separate from profile save) ─────────
+  pwdSaving = false;
+  pwdSuccess = false;
+  pwdError = false;
+  pwdErrorMessage = '';
+  showLogoutModal = false;
 
   // ── Colour palette ─────────────────────────────────────────
   colorOptions = [
@@ -106,7 +114,6 @@ export class Profile implements OnInit {
       .subscribe(res => {
         if (res?.status === 'success' && res.data?.user) {
           const u = res.data.user;
-          // Split fullName safely
           const names = u.fullName.trim().split(/\s+/);
           const firstName = names.shift() || '';
           const lastName = names.join(' ') || '';
@@ -169,27 +176,54 @@ export class Profile implements OnInit {
     });
   }
 
-  // ── Save ───────────────────────────────────────────────────
+  // ── Save profile ───────────────────────────────────────────
   onSave(): void {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!user.user_id) return;
+
     this.saving = true;
-    setTimeout(() => {
-      const toSave = {
-        firstName: this.profile.firstName,
-        lastName: this.profile.lastName,
-        email: this.profile.email,
-        jobTitle: this.profile.jobTitle,
-        bio: this.profile.bio,
-        timezone: this.profile.timezone,
-        language: this.profile.language,
-        color: this.profile.color,
-      };
-      localStorage.setItem('vorta_profile', JSON.stringify(toSave));
-      this.originalSnapshot = this.getSnapshot();
-      this.isDirty = false;
-      this.saving = false;
-      this.saveSuccess = true;
-      setTimeout(() => this.saveSuccess = false, 3000);
-    }, 800);
+    this.saveError = false;
+    this.saveErrorMessage = '';
+
+    const payload = {
+      user_id: user.user_id,
+      firstName: this.profile.firstName,
+      lastName: this.profile.lastName,
+      bio: this.profile.bio,
+    };
+
+    this.http.post<any>('http://localhost/VortaAppApis/profile/update-user.php', payload)
+      .pipe(
+        catchError(err => {
+          console.error('Update profile error', err);
+          return of(null);
+        })
+      )
+      .subscribe(res => {
+        this.saving = false;
+
+        if (res?.status === 'success') {
+          const fullName: string = res.data?.full_name || `${this.profile.firstName} ${this.profile.lastName}`.trim();
+          const names = fullName.trim().split(/\s+/);
+          const firstName = names.shift() || '';
+          const lastName = names.join(' ') || '';
+
+          this.profile.firstName = firstName;
+          this.profile.lastName = lastName;
+          this.profile.bio = res.data?.bio ?? this.profile.bio;
+          this.profile.name = fullName;
+          this.profile.initials = (firstName[0] + (lastName[0] || '')).toUpperCase();
+
+          this.originalSnapshot = this.getSnapshot();
+          this.isDirty = false;
+          this.saveSuccess = true;
+          setTimeout(() => this.saveSuccess = false, 3000);
+        } else {
+          this.saveError = true;
+          this.saveErrorMessage = res?.message || 'Failed to update profile. Please try again.';
+          setTimeout(() => this.saveError = false, 4000);
+        }
+      });
   }
 
   onCancel(): void {
@@ -197,7 +231,7 @@ export class Profile implements OnInit {
     this.isDirty = false;
   }
 
-  // ── Password ───────────────────────────────────────────────
+  // ── Password strength ──────────────────────────────────────
   checkPwdStrength(): void {
     const p = this.passwords.new;
     let score = 0;
@@ -215,14 +249,68 @@ export class Profile implements OnInit {
     ];
     this.pwdStrength = map[Math.min(score, 4)];
   }
+  openLogoutModal(): void {
+    this.showLogoutModal = true;
+  }
 
+  closeLogoutModal(): void {
+    this.showLogoutModal = false;
+  }
+
+  logout(): void {
+    // Clear user session
+    localStorage.removeItem('user');
+
+    // Close modal
+    this.showLogoutModal = false;
+
+    // Redirect to login page
+    this.router.navigate(['/login']);
+  }
+  // ── Update password (separate button) ─────────────────────
   onChangePassword(): void {
-    if (!this.passwords.current || !this.passwords.new || this.passwords.new !== this.passwords.confirm) return;
-    // Simulate API call
-    setTimeout(() => {
-      this.passwords = { current: '', new: '', confirm: '' };
-      this.pwdStrength = { pct: 0, label: '', color: '' };
-      alert('Password updated!');
-    }, 600);
+    if (
+      !this.passwords.current ||
+      !this.passwords.new ||
+      this.passwords.new !== this.passwords.confirm
+    ) return;
+
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!user.user_id) return;
+
+    this.pwdSaving = true;
+    this.pwdError = false;
+    this.pwdErrorMessage = '';
+    this.pwdSuccess = false;
+
+    const payload = {
+      user_id: user.user_id,
+      current_password: this.passwords.current,
+      new_password: this.passwords.new,
+    };
+
+    this.http.post<any>('http://localhost/VortaAppApis/profile/update-password.php', payload)
+      .pipe(
+        catchError(err => {
+          console.error('Update password error', err);
+          return of(null);
+        })
+      )
+      .subscribe(res => {
+        this.pwdSaving = false;
+
+        if (res?.status === 'success') {
+          // Clear all password fields
+          this.passwords = { current: '', new: '', confirm: '' };
+          this.pwdStrength = { pct: 0, label: '', color: '' };
+          this.pwdSuccess = true;
+          setTimeout(() => this.pwdSuccess = false, 3000);
+        } else {
+          this.pwdError = true;
+          // Shows "Current password is incorrect" or any other API message
+          this.pwdErrorMessage = res?.message || 'Failed to update password. Please try again.';
+          setTimeout(() => this.pwdError = false, 4000);
+        }
+      });
   }
 }

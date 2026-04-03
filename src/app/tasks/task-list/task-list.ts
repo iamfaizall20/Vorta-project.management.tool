@@ -35,7 +35,7 @@ interface DayPopup {
 @Component({
   selector: 'app-task-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TitleCasePipe],
+imports: [CommonModule, FormsModule, TitleCasePipe],
   templateUrl: './task-list.html',
   styleUrls: ['./task-list.css'],
 })

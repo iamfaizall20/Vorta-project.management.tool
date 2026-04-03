@@ -140,30 +140,23 @@ export class ProjectDetail implements OnInit {
   // ───────────────── Init ─────────────────
   ngOnInit(): void {
 
-    // Checking User Role
     const user = JSON.parse(localStorage.getItem('user')!);
     if (user.role === 'admin') {
       this.isUserAdmin = true;
     }
 
-    console.log('🚀 ProjectDetail component initialized');
-    const id = this.route.snapshot.paramMap.get('id');
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id) {
+        this.fetchProjectData(id);
+      }
+    })
     const organizationId = localStorage.getItem('organization_id');
 
-    console.log('📍 Project ID from route:', id);
-    console.log('🏢 Organization ID from localStorage:', organizationId);
-
     if (!organizationId) {
-      console.error('❌ No organization_id found in localStorage');
       this.isLoading = false;
       this.router.navigate(['/app/projects']);
       return;
-    }
-
-    if (id) {
-      this.fetchProjectData(id);
-    } else {
-      console.error('❌ No project ID in route params');
     }
   }
 

@@ -18,7 +18,7 @@ export class OrganizationComponent implements OnInit {
   saveSuccess = false;
   activeSection: string | null = 'general';
 
-  // ── Dummy org data (replace with API response) ─────────────────
+  // ── Org data ───────────────────────────────────────────────────
   org = {
     // Identity
     name: 'Vorta Technologies',
@@ -38,10 +38,8 @@ export class OrganizationComponent implements OnInit {
 
     // Quick info
     website: 'https://vorta.io',
-    location: 'San Francisco, CA',
     contactEmail: 'hello@vorta.io',
     phone: '+1 (415) 555-0192',
-    taxId: 'US-84-2891034',
 
     // Contact details
     address: '101 Market St, Suite 800',
@@ -49,23 +47,9 @@ export class OrganizationComponent implements OnInit {
     postalCode: '94105',
     state: 'California',
     country: 'United States',
-
-    // Legal & billing
-    legalName: 'Vorta Technologies Inc.',
-    regNumber: 'REG-C4820938',
-    billingEmail: 'billing@vorta.io',
-
-    // Members & access
-    seatsUsed: 48,
-    seatsTotal: 60,
-    defaultRole: 'Member',
-    inviteExpiry: '7 days',
-    allowPublicSignup: false,
-    requireAdminApproval: true,
-    enforce2FA: false,
   };
 
-  // ── Mesh gradient for identity card bg ─────────────────────────
+  // ── Mesh gradient ──────────────────────────────────────────────
   get meshGradient(): string {
     const c = this.org.color;
     return `
@@ -90,7 +74,6 @@ export class OrganizationComponent implements OnInit {
   }
 
   onCancel(): void {
-    // TODO: reset to last saved snapshot
     this.isDirty = false;
   }
 
@@ -99,8 +82,6 @@ export class OrganizationComponent implements OnInit {
     if (!this.isDirty) return;
     this.saving = true;
 
-    // TODO: replace with real API call
-    // this.orgService.update(this.org).subscribe(...)
     setTimeout(() => {
       this.saving = false;
       this.isDirty = false;
@@ -111,12 +92,10 @@ export class OrganizationComponent implements OnInit {
 
   // ── Danger zone ────────────────────────────────────────────────
   onTransferOwnership(): void {
-    // TODO: open transfer ownership modal
     console.log('Transfer ownership');
   }
 
   onDeleteOrg(): void {
-    // TODO: open confirmation modal
     console.log('Delete organization');
   }
 }
